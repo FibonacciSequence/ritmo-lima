@@ -1,1356 +1,1228 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#0e0b08">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ritmo Lima">
-<title>Ritmo Lima</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<style>
-/* ═══════════════════════════════════════════
-   TOKENS
-═══════════════════════════════════════════ */
-:root {
-  --bg:       #0d0a07;
-  --bg2:      #161210;
-  --bg3:      #1f1914;
-  --bg4:      #28201a;
-  --card:     #1a1410;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.13);
-  --border3:  rgba(255,255,255,0.22);
-  --text:     #f2ecdb;
-  --text2:    #b8aa96;
-  --muted:    #7a6e5e;
-  --accent:   #e55c18;
-  --accent-h: #cc4f13;
-  --gold:     #e9a82e;
-  --gold-dim: #a97820;
-  --green:    #2d8c5e;
-  --radius:   10px;
-  --radius-lg: 16px;
-  --nav-h:    56px;
-  --safe-b:   env(safe-area-inset-bottom, 0px);
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lima Bike Share - Comparte tu bici, alquila una bici</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚲</text></svg>">
 
-/* ═══════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════ */
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-html { height:100%; overflow:hidden; }
-body {
-  font-family:'DM Sans',sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-}
+  <script>
+    function testLogin() { document.getElementById('loginModal').style.display = 'block'; }
+    function testSignup() { document.getElementById('signupModal').style.display = 'block'; }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    function scrollToSection(sectionId) {
+      const detailPage = document.getElementById('bikeDetailPage');
+      if (detailPage && detailPage.style.display !== 'none') {
+        if (typeof showMainPage === 'function') showMainPage();
+        setTimeout(function() { scrollToSection(sectionId); }, 50);
+        return false;
+      }
+      const section = document.getElementById(sectionId);
+      if (section) {
+        const navHeight = 64;
+        const elementPosition = section.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+      return false;
+    }
+    window.testLogin = testLogin;
+    window.testSignup = testSignup;
+    window.closeModal = closeModal;
+    window.scrollToSection = scrollToSection;
+  </script>
 
-/* ═══════════════════════════════════════════
-   APP SHELL
-═══════════════════════════════════════════ */
-#app-header {
-  flex-shrink:0;
-  height:var(--nav-h);
-  background:rgba(13,10,7,0.92);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 1rem;
-  position:relative;
-  z-index:50;
-}
-.header-logo {
-  font-family:'Playfair Display',serif;
-  font-style:italic;
-  font-size:1.35rem;
-  color:var(--accent);
-  letter-spacing:-0.5px;
-  cursor:pointer;
-  flex-shrink:0;
-}
-.header-search-wrap {
-  flex:1;
-  max-width:320px;
-  margin:0 1rem;
-  position:relative;
-}
-.header-search {
-  width:100%;
-  background:var(--bg3);
-  border:1px solid var(--border2);
-  border-radius:8px;
-  padding:7px 12px 7px 34px;
-  font-family:'DM Sans',sans-serif;
-  font-size:0.82rem;
-  color:var(--text);
-  outline:none;
-  transition:border-color 0.2s;
-}
-.header-search::placeholder { color:var(--muted); }
-.header-search:focus { border-color:var(--border3); }
-.search-icon {
-  position:absolute; left:10px; top:50%; transform:translateY(-50%);
-  color:var(--muted); pointer-events:none; font-size:14px;
-}
-.header-fav-btn {
-  background:none; border:none; color:var(--muted);
-  cursor:pointer; font-size:1.2rem; padding:6px;
-  transition:color 0.2s; flex-shrink:0;
-}
-.header-fav-btn:hover { color:var(--gold); }
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ═══════════════════════════════════════════
-   SCROLL AREA
-═══════════════════════════════════════════ */
-#scroll-area {
-  flex:1;
-  overflow-y:auto;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  scroll-behavior:smooth;
-}
-#scroll-area::-webkit-scrollbar { width:4px; }
-#scroll-area::-webkit-scrollbar-track { background:transparent; }
-#scroll-area::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+    :root {
+      --green: #2e7d32;
+      --green-light: #4caf50;
+      --green-pale: #e8f5e9;
+      --orange: #ff6b35;
+      --orange-dark: #e55a2b;
+      --text: #1a1a1a;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f9fafb;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --radius-pill: 999px;
+    }
 
-/* ═══════════════════════════════════════════
-   BOTTOM NAV
-═══════════════════════════════════════════ */
-#bottom-nav {
-  flex-shrink:0;
-  height:calc(56px + var(--safe-b));
-  background:rgba(13,10,7,0.96);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border-top:1px solid var(--border);
-  display:flex;
-  align-items:flex-start;
-  padding-top:6px;
-  padding-bottom:var(--safe-b);
-}
-.nav-tab {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:3px;
-  padding:4px 0;
-  cursor:pointer;
-  background:none;
-  border:none;
-  color:var(--muted);
-  transition:color 0.18s;
-  font-family:'DM Sans',sans-serif;
-}
-.nav-tab.active { color:var(--accent); }
-.nav-tab svg { width:22px; height:22px; }
-.nav-tab span { font-size:0.62rem; font-weight:500; letter-spacing:0.04em; text-transform:uppercase; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: var(--text); background: var(--white); }
 
-/* ═══════════════════════════════════════════
-   PAGES
-═══════════════════════════════════════════ */
-.page { display:none; padding-bottom:1rem; }
-.page.active { display:block; }
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      position: fixed; width: 100%; top: 0; z-index: 1000;
+      height: 64px; display: flex; align-items: center;
+    }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.2rem; font-weight: 700; text-decoration: none; color: var(--green); }
+    nav ul { display: flex; list-style: none; gap: 0.25rem; align-items: center; }
+    nav ul a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+      font-weight: 500; padding: 7px 14px; border-radius: var(--radius-pill); transition: all 0.2s;
+    }
+    nav ul a:hover { color: var(--text); background: var(--bg); }
+    nav ul .nav-btn-login { color: var(--green); border: 1.5px solid var(--green); }
+    nav ul .nav-btn-login:hover { background: var(--green-pale); }
+    nav ul .nav-btn-signup { background: var(--green); color: var(--white) !important; }
+    nav ul .nav-btn-signup:hover { background: #256427; }
 
-/* ═══════════════════════════════════════════
-   SEARCH RESULTS OVERLAY
-═══════════════════════════════════════════ */
-#search-results {
-  position:absolute;
-  top:var(--nav-h);
-  left:0; right:0;
-  background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  z-index:40;
-  max-height:70vh;
-  overflow-y:auto;
-  display:none;
-}
-#search-results.open { display:block; }
-.sr-item {
-  display:flex; align-items:center; gap:12px;
-  padding:12px 1rem;
-  border-bottom:1px solid var(--border);
-  cursor:pointer;
-  transition:background 0.15s;
-}
-.sr-item:hover { background:var(--bg3); }
-.sr-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.sr-info { flex:1; min-width:0; }
-.sr-name { font-size:0.85rem; font-weight:500; color:var(--text); }
-.sr-meta { font-size:0.72rem; color:var(--muted); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
 
-/* ═══════════════════════════════════════════
-   HERO (HOME)
-═══════════════════════════════════════════ */
-.home-hero {
-  position:relative;
-  padding:2.5rem 1.25rem 2rem;
-  overflow:hidden;
-}
-.home-hero-bg {
-  position:absolute; inset:0; pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 70% at 80% 20%, rgba(229,92,24,0.15) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 50% at 10% 80%, rgba(200,57,43,0.09) 0%, transparent 55%);
-}
-.home-hero-grid {
-  position:absolute; inset:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
-  background-size:48px 48px;
-  mask-image:radial-gradient(ellipse at 50% 50%,black 20%,transparent 75%);
-}
-.hero-eyebrow {
-  position:relative;
-  font-size:0.68rem; font-weight:500; letter-spacing:0.2em;
-  text-transform:uppercase; color:var(--accent);
-  margin-bottom:0.75rem;
-  display:flex; align-items:center; gap:10px;
-}
-.hero-eyebrow::before { content:''; width:28px; height:1px; background:var(--accent); }
-.hero-title {
-  position:relative;
-  font-family:'Playfair Display',serif;
-  font-size:clamp(2.2rem,7vw,3.8rem);
-  font-weight:900; line-height:0.95;
-  letter-spacing:-1.5px; color:var(--text);
-  margin-bottom:1rem;
-}
-.hero-title em { font-style:italic; color:var(--accent); display:block; }
-.hero-sub {
-  position:relative;
-  font-size:0.88rem; font-weight:300; color:var(--text2);
-  line-height:1.65; margin-bottom:1.5rem; max-width:420px;
-}
-.hero-stats-row {
-  position:relative;
-  display:flex; gap:1.5rem; margin-bottom:1.75rem;
-}
-.hstat { text-align:center; }
-.hstat-n {
-  font-family:'Playfair Display',serif;
-  font-size:1.8rem; font-weight:700; color:var(--gold); line-height:1;
-}
-.hstat-l { font-size:0.62rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
-.hero-cta-row { display:flex; gap:10px; flex-wrap:wrap; }
-.btn-primary {
-  padding:0.7rem 1.5rem;
-  background:var(--accent); color:#fff;
-  font-family:'DM Sans',sans-serif;
-  font-size:0.85rem; font-weight:500;
-  border:none; border-radius:6px; cursor:pointer;
-  transition:background 0.18s,transform 0.1s;
-  text-decoration:none; display:inline-block;
-}
-.btn-primary:hover { background:var(--accent-h); transform:translateY(-1px); }
-.btn-ghost {
-  padding:0.7rem 1.5rem;
-  background:transparent; color:var(--text);
-  font-family:'DM Sans',sans-serif;
-  font-size:0.85rem; font-weight:500;
-  border:1px solid var(--border2); border-radius:6px; cursor:pointer;
-  transition:border-color 0.18s,transform 0.1s;
-  text-decoration:none; display:inline-block;
-}
-.btn-ghost:hover { border-color:var(--border3); transform:translateY(-1px); }
+    .hero {
+      padding: 120px 0 80px;
+      background: linear-gradient(160deg, #f0fdf4 0%, #ecfdf5 40%, #f0f9ff 100%);
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .hero .container { position: relative; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-pale); color: var(--green);
+      font-size: 0.8rem; font-weight: 600; padding: 5px 14px;
+      border-radius: var(--radius-pill); margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 800; color: var(--text);
+      letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 1.2rem;
+    }
+    .hero h1 span { color: var(--green); }
+    .hero p { font-size: 1.15rem; color: var(--text-muted); max-width: 560px; margin: 0 auto 2.5rem; line-height: 1.7; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-/* ── HOME SECTIONS ── */
-.home-section { padding:1.5rem 1.25rem 0; }
-.home-section-header {
-  display:flex; align-items:baseline; justify-content:space-between;
-  margin-bottom:1rem;
-}
-.home-section-title {
-  font-family:'Playfair Display',serif;
-  font-size:1.25rem; font-weight:700; color:var(--text);
-}
-.see-all {
-  font-size:0.75rem; color:var(--accent); cursor:pointer;
-  background:none; border:none; font-family:'DM Sans',sans-serif;
-  transition:opacity 0.15s;
-}
-.see-all:hover { opacity:0.7; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 26px; border-radius: var(--radius-pill); font-size: 0.95rem;
+      font-weight: 600; border: none; cursor: pointer; text-decoration: none; transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--orange); color: white; box-shadow: 0 4px 14px rgba(255,107,53,0.3); }
+    .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); color: white; }
+    .btn-outline { background: var(--white); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--text-muted); transform: translateY(-1px); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: #256427; transform: translateY(-1px); color: white; }
+    .btn-secondary { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
 
-/* horizontal scroll strip */
-.h-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; }
-.h-scroll::-webkit-scrollbar { display:none; }
+    .trust-bar { background: var(--white); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 16px 0; }
+    .trust-bar .container { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; }
+    .trust-item { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-muted); font-weight: 500; }
 
-/* ── TODAY CARDS ── */
-.today-card {
-  flex-shrink:0; width:200px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:1rem;
-  scroll-snap-align:start;
-  cursor:pointer; transition:border-color 0.18s,transform 0.15s;
-  border-left:3px solid var(--sc);
-  position:relative; overflow:hidden;
-}
-.today-card:hover { border-color:var(--sc); transform:translateY(-2px); }
-.today-card-school { font-size:0.68rem; font-weight:500; color:var(--sc); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
-.today-card-time { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--text); line-height:1; margin-bottom:4px; }
-.today-card-estilo { font-size:0.82rem; color:var(--text2); margin-bottom:2px; }
-.today-card-nivel { font-size:0.7rem; color:var(--muted); }
-.today-card-sede { font-size:0.68rem; color:var(--muted); margin-top:8px; line-height:1.4; }
-.no-today { font-size:0.85rem; color:var(--muted); font-style:italic; padding:0.5rem 0; }
+    .user-panel {
+      display: none; background: var(--green-pale); border: 1px solid #c8e6c9; color: var(--green);
+      padding: 12px 20px; border-radius: var(--radius); margin: 80px 0 0;
+      text-align: center; font-weight: 500; font-size: 0.9rem;
+    }
 
-/* ── ESCOLA MINI CARD ── */
-.school-mini {
-  flex-shrink:0; width:200px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:1rem;
-  scroll-snap-align:start;
-  cursor:pointer; transition:all 0.18s;
-  position:relative; overflow:hidden;
-}
-.school-mini::before {
-  content:'';
-  position:absolute; top:0; left:0; right:0;
-  height:3px; background:var(--sc);
-}
-.school-mini:hover { border-color:var(--border2); transform:translateY(-2px); }
-.sm-rank {
-  font-family:'Playfair Display',serif;
-  font-size:2rem; font-weight:900; color:var(--sc);
-  opacity:0.12; position:absolute; top:4px; right:10px; line-height:1;
-}
-.sm-name { font-size:0.9rem; font-weight:500; color:var(--text); margin-bottom:4px; line-height:1.3; }
-.sm-sedes { font-size:0.7rem; color:var(--muted); margin-bottom:8px; line-height:1.5; }
-.sm-tags { display:flex; flex-wrap:wrap; gap:4px; }
-.sm-tag {
-  font-size:0.6rem; padding:2px 7px;
-  border-radius:2px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.08);
-  color:var(--muted);
-}
-.fav-star {
-  position:absolute; top:10px; right:10px;
-  font-size:0.95rem; cursor:pointer; z-index:2;
-  transition:transform 0.2s;
-}
-.fav-star:hover { transform:scale(1.3); }
+    section { padding: 80px 0; }
+    .bg-light { background: var(--bg); }
 
-/* ═══════════════════════════════════════════
-   SCHOOLS PAGE
-═══════════════════════════════════════════ */
-.page-header {
-  padding:1.5rem 1.25rem 1rem;
-  border-bottom:1px solid var(--border);
-}
-.page-title {
-  font-family:'Playfair Display',serif;
-  font-size:1.6rem; font-weight:700; color:var(--text);
-  margin-bottom:0.25rem;
-}
-.page-subtitle { font-size:0.82rem; color:var(--muted); }
+    h2.section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: var(--text); letter-spacing: -0.8px; margin-bottom: 0.5rem; text-align: center; }
+    .section-sub { text-align: center; color: var(--text-muted); font-size: 1rem; margin-bottom: 3rem; }
 
-.filter-chips { display:flex; gap:8px; overflow-x:auto; padding:1rem 1.25rem 0; }
-.filter-chips::-webkit-scrollbar { display:none; }
-.chip {
-  flex-shrink:0;
-  padding:5px 14px;
-  font-size:0.75rem; font-weight:500;
-  border-radius:20px; border:1px solid var(--border2);
-  background:transparent; color:var(--muted); cursor:pointer;
-  transition:all 0.15s; font-family:'DM Sans',sans-serif;
-  white-space:nowrap;
-}
-.chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
-.chip:hover:not(.on) { border-color:var(--border3); color:var(--text); }
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .step-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 1.5rem; text-align: center; transition: box-shadow 0.25s, transform 0.25s; }
+    .step-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    .step-number { width: 52px; height: 52px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; margin: 0 auto 1.25rem; }
+    .step-card h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 0.6rem; }
+    .step-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
 
-.schools-list { padding:1rem 1.25rem; display:flex; flex-direction:column; gap:10px; }
-.school-row {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:1.1rem 1.1rem 1.1rem 0.9rem;
-  display:flex; gap:1rem; align-items:flex-start;
-  cursor:pointer; transition:all 0.18s;
-  position:relative; overflow:hidden;
-}
-.school-row::before {
-  content:''; position:absolute; left:0; top:0; bottom:0;
-  width:3px; background:var(--sc); border-radius:3px 0 0 3px;
-  transition:width 0.2s;
-}
-.school-row:hover { border-color:var(--border2); transform:translateX(2px); }
-.school-row:hover::before { width:5px; }
-.school-row-num {
-  font-family:'Playfair Display',serif;
-  font-size:1.4rem; font-weight:700; color:var(--sc); opacity:0.5;
-  line-height:1; flex-shrink:0; min-width:28px;
-}
-.school-row-body { flex:1; min-width:0; }
-.school-row-name { font-size:0.95rem; font-weight:500; color:var(--text); margin-bottom:3px; }
-.school-row-sedes { font-size:0.72rem; color:var(--muted); margin-bottom:6px; }
-.school-row-tags { display:flex; flex-wrap:wrap; gap:4px; }
-.school-row-right { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-.school-row-fav { font-size:1rem; cursor:pointer; transition:transform 0.18s; }
-.school-row-fav:hover { transform:scale(1.25); }
-.school-row-chevron { color:var(--muted); font-size:0.85rem; }
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+    .feature-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .feature-item { display: flex; gap: 1rem; align-items: flex-start; }
+    .feature-icon { width: 44px; height: 44px; flex-shrink: 0; background: var(--green-pale); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .feature-item h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
+    .feature-item p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+    .features-img { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); height: 400px; }
+    .features-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* ═══════════════════════════════════════════
-   SCHOOL DETAIL PAGE
-═══════════════════════════════════════════ */
-.detail-hero {
-  padding:1.5rem 1.25rem 1.25rem;
-  position:relative; overflow:hidden;
-  border-bottom:1px solid var(--border);
-}
-.detail-hero-bg {
-  position:absolute; inset:0; pointer-events:none;
-  opacity:0.08;
-}
-.detail-back {
-  display:flex; align-items:center; gap:6px;
-  font-size:0.78rem; color:var(--muted); cursor:pointer;
-  background:none; border:none; font-family:'DM Sans',sans-serif;
-  margin-bottom:1rem; transition:color 0.15s;
-}
-.detail-back:hover { color:var(--text); }
-.detail-color-bar { width:48px; height:4px; border-radius:2px; margin-bottom:1rem; }
-.detail-name {
-  font-family:'Playfair Display',serif;
-  font-size:1.8rem; font-weight:900; color:var(--text);
-  line-height:1.1; margin-bottom:0.5rem;
-}
-.detail-sedes { font-size:0.82rem; color:var(--text2); margin-bottom:0.75rem; }
-.detail-nota { font-size:0.8rem; color:var(--muted); font-style:italic; margin-bottom:1rem; }
-.detail-actions { display:flex; gap:10px; flex-wrap:wrap; }
-.detail-action-btn {
-  display:flex; align-items:center; gap:7px;
-  padding:8px 16px;
-  background:var(--bg3); border:1px solid var(--border2);
-  border-radius:6px; cursor:pointer; font-family:'DM Sans',sans-serif;
-  font-size:0.8rem; color:var(--text2); transition:all 0.15s;
-}
-.detail-action-btn:hover { border-color:var(--border3); color:var(--text); }
+    .bikes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .bike-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: box-shadow 0.25s, transform 0.25s; position: relative; }
+    .bike-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    .bike-card img { width: 100%; height: 200px; object-fit: cover; display: block; }
+    .bike-card-body { padding: 1.25rem; }
+    .bike-card-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .bike-card-location { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .bike-card-price { font-size: 1.3rem; font-weight: 800; color: var(--orange); }
+    .bike-card-price-day { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin-bottom: 0.5rem; }
+    .bike-card-owner { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .bike-card-accessories { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .badge-verified { display: inline-flex; align-items: center; gap: 4px; background: var(--green-pale); color: var(--green); font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-pill); margin-bottom: 0.5rem; }
+    .admin-controls { position: absolute; top: 12px; right: 12px; z-index: 10; display: flex; gap: 6px; }
+    .admin-controls button { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; color: white; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+    .btn-edit { background: #3b82f6; }
+    .btn-delete { background: #ef4444; }
 
-.detail-section { padding:1.25rem 1.25rem 0; }
-.detail-section-title {
-  font-size:0.68rem; font-weight:500; letter-spacing:0.15em;
-  text-transform:uppercase; color:var(--muted); margin-bottom:0.75rem;
-}
-.estilo-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1.25rem; }
-.estilo-pill {
-  padding:6px 14px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:4px;
-  font-size:0.78rem; color:var(--text2);
-}
-.sede-chip {
-  display:flex; align-items:center; gap:8px;
-  padding:10px 12px;
-  background:var(--bg3); border:1px solid var(--border);
-  border-radius:8px; margin-bottom:8px;
-  font-size:0.82rem; color:var(--text2);
-}
-.sede-chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.detail-classes { display:flex; flex-direction:column; gap:8px; margin-bottom:1.25rem; }
-.detail-class-card {
-  background:var(--bg3); border:1px solid var(--border);
-  border-radius:8px; padding:12px;
-  border-left:3px solid var(--sc);
-}
-.dc-row1 { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
-.dc-time { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--text); }
-.dc-day { font-size:0.75rem; color:var(--muted); }
-.dc-estilo { font-size:0.85rem; color:var(--text2); margin-bottom:2px; }
-.dc-meta { font-size:0.72rem; color:var(--muted); }
+    .form-container { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; max-width: 800px; margin: 0 auto; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    label { display: block; margin-bottom: 6px; font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="file"], input[type="date"], textarea {
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; color: var(--text); background: var(--white);
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(76,175,80,0.12); }
+    small { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: block; }
 
-/* ═══════════════════════════════════════════
-   CALENDAR PAGE
-═══════════════════════════════════════════ */
-.cal-header { padding:1.25rem 1.25rem 0; }
-.cal-week-nav {
-  display:flex; align-items:center; gap:10px;
-  background:var(--bg3); border:1px solid var(--border);
-  border-radius:8px; padding:8px 12px;
-  margin-bottom:1rem;
-}
-.cal-week-nav button {
-  background:none; border:none; color:var(--muted);
-  font-size:1rem; cursor:pointer; padding:0 4px;
-  transition:color 0.15s; line-height:1;
-}
-.cal-week-nav button:hover { color:var(--text); }
-.cal-week-nav span {
-  flex:1; text-align:center;
-  font-size:0.82rem; font-weight:500; color:var(--text);
-}
-.cal-filters { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
-.cal-filters::-webkit-scrollbar { display:none; }
-.legend-row { display:flex; flex-wrap:wrap; gap:7px; padding:0.75rem 1.25rem 0; }
-.leg {
-  display:flex; align-items:center; gap:6px;
-  font-size:0.68rem; color:var(--muted);
-  padding:4px 9px; border-radius:20px;
-  border:1px solid var(--border); cursor:pointer;
-  transition:all 0.15s; user-select:none;
-}
-.leg:hover { border-color:var(--border2); color:var(--text); }
-.leg.off { opacity:0.28; }
-.leg-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.cal-grid {
-  display:grid;
-  grid-template-columns:repeat(7,minmax(0,1fr));
-  gap:1px;
-  background:var(--border);
-  border:1px solid var(--border);
-  border-radius:8px;
-  overflow:hidden;
-  margin:0.75rem 1.25rem 0;
-}
-.day-col { background:var(--bg2); display:flex; flex-direction:column; }
-.day-head {
-  font-size:0.6rem; font-weight:500; letter-spacing:0.06em;
-  text-transform:uppercase; color:var(--muted);
-  text-align:center; padding:8px 2px 6px;
-  background:var(--bg3); border-bottom:1px solid var(--border);
-  line-height:1.3;
-}
-.day-head.today { color:var(--accent); background:rgba(229,92,24,0.1); }
-.day-body { flex:1; padding:4px; display:flex; flex-direction:column; gap:3px; min-height:180px; }
-.cpill {
-  border-radius:3px; padding:5px 6px;
-  cursor:pointer; transition:opacity 0.12s;
-  border-left:2px solid var(--pc);
-  background:color-mix(in srgb,var(--pc) 12%,var(--bg));
-}
-.cpill:hover { opacity:0.82; }
-.cpill-s { font-size:0.56rem; font-weight:500; color:var(--pc); line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.cpill-t { font-size:0.65rem; font-weight:500; color:var(--text); }
-.cpill-e { font-size:0.6rem; color:var(--text2); }
-.cpill-n { font-size:0.55rem; color:var(--muted); margin-top:1px; }
-.no-class {
-  font-size:0.65rem; color:var(--border2);
-  text-align:center; padding:1rem 0; margin:auto;
-}
+    .add-gate { text-align: center; padding: 3rem 1.5rem; }
+    .gate-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .add-gate h3 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+    .add-gate p { color: var(--text-muted); margin-bottom: 1.75rem; max-width: 400px; margin-left: auto; margin-right: auto; font-size: 0.95rem; }
+    .gate-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 0.5rem; }
+    .checkbox-label { display: flex; align-items: center; gap: 7px; font-weight: 500; font-size: 0.88rem; color: var(--text); cursor: pointer; }
+    .checkbox-label input[type="checkbox"] { width: auto; accent-color: var(--green); }
 
-/* ═══════════════════════════════════════════
-   FAVORITES PAGE
-═══════════════════════════════════════════ */
-.fav-empty {
-  text-align:center; padding:4rem 2rem;
-  display:flex; flex-direction:column; align-items:center; gap:1rem;
-}
-.fav-empty-icon { font-size:3rem; opacity:0.3; }
-.fav-empty-text { font-size:0.9rem; color:var(--muted); line-height:1.6; }
-.fav-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:1rem 1.25rem; }
-.fav-card {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:1rem; cursor:pointer; transition:all 0.18s;
-  position:relative; overflow:hidden;
-  border-top:3px solid var(--sc);
-}
-.fav-card:hover { border-color:var(--sc); }
-.fav-card-name { font-size:0.85rem; font-weight:500; color:var(--text); margin-bottom:4px; line-height:1.3; }
-.fav-card-sedes { font-size:0.68rem; color:var(--muted); margin-bottom:6px; }
-.fav-card-tags { display:flex; flex-wrap:wrap; gap:3px; }
-.fav-remove {
-  position:absolute; top:8px; right:8px;
-  font-size:0.8rem; cursor:pointer; color:var(--muted);
-  transition:color 0.15s;
-}
-.fav-remove:hover { color:var(--accent); }
+    #bikeDetailPage { display: none; padding-top: 80px; padding-bottom: 60px; }
+    .detail-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2.5rem; margin-top: 1.5rem; }
+    .detail-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; padding: 8px 0; border: none; background: none; transition: color 0.2s; }
+    .detail-back:hover { color: var(--text); }
+    .main-photo { width: 100%; height: 380px; object-fit: cover; border-radius: var(--radius); margin-bottom: 10px; }
+    .detail-info-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.25rem; }
+    .price-row { display: flex; gap: 2rem; margin-bottom: 0.5rem; }
+    .price-block strong { font-size: 1.5rem; color: var(--orange); font-weight: 800; }
+    .price-block span { font-size: 0.82rem; color: var(--text-muted); display: block; }
+    .owner-card { display: flex; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.25rem; }
+    .owner-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--green); color: white; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .owner-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+    .owner-tag { font-size: 0.8rem; color: var(--text-muted); }
+    .detail-section-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.75rem; }
+    .accessories-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .accessory-badge { background: var(--green-pale); color: var(--green); padding: 6px 12px; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; }
+    .booking-box { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow-sm); }
+    .booking-box h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text); }
+    .booking-total-box { background: var(--green-pale); border: 1px solid #c8e6c9; border-radius: var(--radius-sm); padding: 12px 16px; margin: 1rem 0; font-size: 0.9rem; }
 
-/* ═══════════════════════════════════════════
-   MODAL
-═══════════════════════════════════════════ */
-.overlay {
-  position:fixed; inset:0; z-index:90;
-  background:rgba(0,0,0,0.75);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-  display:flex; align-items:flex-end;
-  opacity:0; pointer-events:none;
-  transition:opacity 0.22s;
-}
-.overlay.open { opacity:1; pointer-events:all; }
-.modal-sheet {
-  width:100%;
-  background:var(--bg3);
-  border-radius:20px 20px 0 0;
-  border:1px solid var(--border2);
-  border-bottom:none;
-  padding:1.5rem 1.5rem calc(1.5rem + var(--safe-b));
-  transform:translateY(30px);
-  transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);
-  max-height:85vh;
-  overflow-y:auto;
-}
-.overlay.open .modal-sheet { transform:translateY(0); }
-.modal-handle {
-  width:36px; height:4px; background:var(--border3);
-  border-radius:2px; margin:0 auto 1.25rem;
-}
-.modal-stripe { width:48px; height:3px; border-radius:2px; margin-bottom:1rem; }
-.modal-title {
-  font-family:'Playfair Display',serif;
-  font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:3px;
-}
-.modal-school-name { font-size:0.82rem; color:var(--muted); margin-bottom:1.25rem; }
-.modal-rows { display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; }
-.mrow { display:flex; gap:12px; font-size:0.85rem; }
-.mk { color:var(--muted); min-width:80px; flex-shrink:0; font-size:0.78rem; }
-.mv { color:var(--text); }
-.modal-btns { display:flex; gap:10px; }
-.modal-btn {
-  flex:1; padding:0.75rem; border-radius:8px;
-  font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500;
-  cursor:pointer; border:1px solid var(--border2);
-  background:transparent; color:var(--text2); transition:all 0.15s;
-}
-.modal-btn:hover { border-color:var(--border3); color:var(--text); }
-.modal-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-.modal-btn.primary:hover { background:var(--accent-h); }
+    .modal { display: none; position: fixed; z-index: 2000; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+    .modal-content { background: var(--white); margin: 4% auto; padding: 2rem; border-radius: var(--radius); width: 92%; max-width: 500px; position: relative; max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; text-align: center; color: var(--text); }
+    .modal .modal-sub { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .close { position: absolute; right: 16px; top: 16px; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); background: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-weight: bold; line-height: 1; }
+    .close:hover { color: var(--text); background: var(--border); }
+    .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.25rem; }
+    .modal-link { text-align: center; margin-top: 1rem; font-size: 0.88rem; color: var(--text-muted); }
+    .modal-link a { color: var(--green); font-weight: 600; text-decoration: none; }
 
-/* ═══════════════════════════════════════════
-   UTILITIES
-═══════════════════════════════════════════ */
-.divider { height:1px; background:var(--border); margin:1.25rem 0 0; }
-.toast {
-  position:fixed; bottom:calc(70px + var(--safe-b)); left:50%; transform:translateX(-50%) translateY(20px);
-  background:var(--bg4); border:1px solid var(--border2);
-  border-radius:8px; padding:10px 20px;
-  font-size:0.82rem; color:var(--text);
-  z-index:200; opacity:0; transition:all 0.25s;
-  white-space:nowrap; pointer-events:none;
-}
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.badge {
-  display:inline-block;
-  background:var(--accent); color:#fff;
-  font-size:0.55rem; font-weight:500;
-  padding:1px 5px; border-radius:10px;
-  vertical-align:super; margin-left:3px;
-}
-</style>
+    .empty-state { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 3rem; text-align: center; grid-column: 1/-1; }
+    .empty-state h3 { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--text-muted); font-size: 0.9rem; }
+    .empty-state a { color: var(--orange); font-weight: 600; text-decoration: none; }
+
+    footer { background: var(--text); color: rgba(255,255,255,0.65); padding: 2.5rem 0; text-align: center; font-size: 0.9rem; }
+    footer .footer-logo { color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.4rem; display: block; }
+
+    @media (max-width: 768px) {
+      nav ul { display: none; }
+      .steps-grid, .bikes-grid { grid-template-columns: 1fr; }
+      .features-grid, .detail-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .hero { padding: 100px 0 60px; }
+      .trust-bar .container { gap: 1.5rem; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- ── APP HEADER ── -->
-<header id="app-header">
-  <div class="header-logo" onclick="goHome()">Ritmo Lima</div>
-  <div class="header-search-wrap">
-    <span class="search-icon">🔍</span>
-    <input class="header-search" type="text" id="search-input" placeholder="Buscar escuela, estilo…" autocomplete="off">
+  <nav>
+    <div class="container">
+      <a href="#" class="logo">🚲 Lima Bike Share</a>
+      <ul>
+        <li><a href="#como-funciona" onclick="scrollToSection('como-funciona'); return false;">Cómo funciona</a></li>
+        <li><a href="#bicicletas" onclick="scrollToSection('bicicletas'); return false;">Bicicletas</a></li>
+        <li><a href="#agregar" onclick="scrollToSection('agregar'); return false;">Agregar bici</a></li>
+        <li><a href="#" class="nav-btn-login" onclick="testLogin(); return false;">Iniciar sesión</a></li>
+        <li><a href="#" class="nav-btn-signup" onclick="testSignup(); return false;">Registrarse</a></li>
+        <li><a href="#" id="logoutBtn" style="display: none;" class="nav-btn-login">Salir</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="userPanel" class="user-panel">✅ <span id="userInfo"></span></div>
   </div>
-  <button class="header-fav-btn" onclick="showTab('favs')" title="Favoritos">★</button>
-</header>
 
-<!-- ── SEARCH RESULTS ── -->
-<div id="search-results"></div>
-
-<!-- ── MAIN SCROLL AREA ── -->
-<div id="scroll-area">
-
-  <!-- HOME PAGE -->
-  <div class="page active" id="page-home">
-    <div class="home-hero">
-      <div class="home-hero-bg"></div>
-      <div class="home-hero-grid"></div>
-      <div class="hero-eyebrow">Lima, Perú · 2025</div>
-      <h1 class="hero-title">Top 10<br><em>Escuelas de Baile</em></h1>
-      <p class="hero-sub">Salsa, bachata, merengue y más — horarios semanales, profesores y ubicaciones por distrito.</p>
-      <div class="hero-stats-row">
-        <div class="hstat"><div class="hstat-n">10</div><div class="hstat-l">Escuelas</div></div>
-        <div class="hstat"><div class="hstat-n">15+</div><div class="hstat-l">Distritos</div></div>
-        <div class="hstat"><div class="hstat-n">50+</div><div class="hstat-l">Clases/sem</div></div>
-      </div>
-      <div class="hero-cta-row">
-        <button class="btn-primary" onclick="showTab('escuelas')">Ver escuelas</button>
-        <button class="btn-ghost" onclick="showTab('calendario')">Calendario</button>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-tag">🌿 Lima · Transporte Sostenible</div>
+      <h1>Comparte tu bici.<br><span>Alquila una bici.</span></h1>
+      <p>Conectamos ciclistas en Lima. Comparte tu bicicleta con otros ciclistas o alquila una bici local. Transacciones confiables, usuarios verificados.</p>
+      <div class="hero-actions">
+        <a href="#bicicletas" class="btn btn-primary" onclick="scrollToSection('bicicletas'); return false;">Ver Bicicletas</a>
+        <a href="#agregar" class="btn btn-outline" onclick="scrollToSection('agregar'); return false;">Compartir mi Bici</a>
       </div>
     </div>
+  </section>
 
-    <!-- Today's classes -->
-    <div class="home-section">
-      <div class="home-section-header">
-        <div class="home-section-title">Hoy</div>
-        <button class="see-all" onclick="showTab('calendario')">Ver semana →</button>
-      </div>
-      <div class="h-scroll" id="today-strip"></div>
-    </div>
-    <div class="divider"></div>
-
-    <!-- Top schools -->
-    <div class="home-section" style="padding-bottom:1.25rem">
-      <div class="home-section-header">
-        <div class="home-section-title">Escuelas destacadas</div>
-        <button class="see-all" onclick="showTab('escuelas')">Ver todas →</button>
-      </div>
-      <div class="h-scroll" id="schools-strip"></div>
+  <div class="trust-bar">
+    <div class="container">
+      <div class="trust-item">✅ Usuarios verificados</div>
+      <div class="trust-item">💬 Contacto por WhatsApp</div>
+      <div class="trust-item">🌱 Movilidad sostenible</div>
+      <div class="trust-item">💰 Precios justos</div>
     </div>
   </div>
 
-  <!-- ESCUELAS PAGE -->
-  <div class="page" id="page-escuelas">
-    <div class="page-header">
-      <div class="page-title">Escuelas</div>
-      <div class="page-subtitle" id="schools-count"></div>
-    </div>
-    <div class="filter-chips" id="estilo-chips"></div>
-    <div class="schools-list" id="schools-list"></div>
-  </div>
-
-  <!-- SCHOOL DETAIL PAGE -->
-  <div class="page" id="page-detail">
-    <div id="detail-content"></div>
-  </div>
-
-  <!-- CALENDARIO PAGE -->
-  <div class="page" id="page-calendario">
-    <div class="page-header">
-      <div class="page-title">Calendario</div>
-      <div class="page-subtitle">Clases semanales por escuela</div>
-    </div>
-    <div class="cal-header">
-      <div class="cal-week-nav">
-        <button id="cal-prev">&#8592;</button>
-        <span id="cal-week-range">—</span>
-        <button id="cal-next">&#8594;</button>
-      </div>
-      <div class="cal-filters" id="cal-filters"></div>
-    </div>
-    <div class="legend-row" id="cal-legend"></div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <div style="height:1.5rem"></div>
-  </div>
-
-  <!-- FAVORITOS PAGE -->
-  <div class="page" id="page-favs">
-    <div class="page-header">
-      <div class="page-title">Favoritos</div>
-      <div class="page-subtitle" id="fav-count">0 escuelas guardadas</div>
-    </div>
-    <div id="fav-content"></div>
-  </div>
-
-</div><!-- /scroll-area -->
-
-<!-- ── BOTTOM NAV ── -->
-<nav id="bottom-nav">
-  <button class="nav-tab active" data-tab="home" onclick="showTab('home')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Inicio</span>
-  </button>
-  <button class="nav-tab" data-tab="escuelas" onclick="showTab('escuelas')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-    <span>Escuelas</span>
-  </button>
-  <button class="nav-tab" data-tab="calendario" onclick="showTab('calendario')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Calendario</span>
-  </button>
-  <button class="nav-tab" data-tab="favs" onclick="showTab('favs')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    <span>Favoritos</span>
-  </button>
-</nav>
-
-<!-- ── CLASS MODAL ── -->
-<div class="overlay" id="class-modal" onclick="closeModal(event)">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-stripe" id="modal-stripe"></div>
-    <div class="modal-title" id="modal-title"></div>
-    <div class="modal-school-name" id="modal-school-name"></div>
-    <div class="modal-rows" id="modal-rows"></div>
-    <div class="modal-btns">
-      <button class="modal-btn" onclick="closeModal()">Cerrar</button>
-      <button class="modal-btn primary" id="modal-detail-btn">Ver escuela →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── TOAST ── -->
-<div class="toast" id="toast"></div>
-
-<script>
-/* ════════════════════════════════════════
-   DATA
-════════════════════════════════════════ */
-const SCHOOLS = [
-  { id:1, name:"Freestyle Dance Perú", color:"#C45E2E",
-    sedes:["Surco","San Borja","Magdalena","SJL"],
-    estilos:["Salsa","Bachata","Hip Hop","Street Jazz","Reggaetón","Contemporáneo"],
-    tel:"+51 947 394 392", web:"freestyleperu.com",
-    nota:"4.9★ Google · 15+ estilos · Primera escuela profesional del Perú" },
-  { id:2, name:"EBAC Escuela de Danza", color:"#1B72C0",
-    sedes:["La Molina","Miraflores","Los Olivos"],
-    estilos:["Salsa","Bachata","Hip Hop","Afrobeat","Dancehall","Reggaetón"],
-    tel:"+51 992 991 181", web:"ebac.com.pe",
-    nota:"Top urbano y latino · 77K+ seguidores Facebook" },
-  { id:3, name:"Rumba Latina Perú", color:"#0F6E56",
-    sedes:["Surco","San Borja","Surquillo"],
-    estilos:["Salsa","Salsa Cubana","Bachata","Afrocubano","Rueda Casino"],
-    tel:"+51 991 824 242", web:"rumbalatinaperu.com",
-    nota:"4.8★ · Lun–Vie 5PM–9PM · Sáb 9AM–5PM" },
-  { id:4, name:"Cuban Groove", color:"#993C1D",
-    sedes:["Miraflores","Barranco"],
-    estilos:["Salsa Cubana","Timba","Afrocubano","Son"],
-    tel:"", web:"cubangrooveperu.com",
-    nota:"Especialistas en sabor cubano · clases y sociales" },
-  { id:5, name:"Bachata Studio", color:"#993556",
-    sedes:["Miraflores"],
-    estilos:["Bachata","Salsa","Ritmos Latinos"],
-    tel:"", web:"bachatastudio.com",
-    nota:"10+ años · reseñas internacionales · privadas y grupales" },
-  { id:6, name:"Talentos Lima", color:"#3B6D11",
-    sedes:["Miraflores","San Isidro"],
-    estilos:["Salsa","Bachata","Merengue","Jazz","Hip Hop","Ballet","Zumba"],
-    tel:"+51 947 325 777", web:"talentoslima.com",
-    nota:"Lun–Dom 7AM–10PM · Mayor variedad de estilos" },
-  { id:7, name:"D1 Academia", color:"#534AB7",
-    sedes:["Miraflores","San Borja"],
-    estilos:["Salsa","Bachata","Contemporáneo","Jazz","Hip Hop"],
-    tel:"", web:"d1.com.pe",
-    nota:"Fundada por Vania Masías · proyección internacional" },
-  { id:8, name:"Arthur Murray Lima", color:"#BA7517",
-    sedes:["Miraflores","San Isidro"],
-    estilos:["Tango","Salsa","Vals","Bachata","Samba","Swing"],
-    tel:"", web:"arthurmurray.pe",
-    nota:"Lun–Sáb 10AM–8PM · Franquicia mundial desde 1912" },
-  { id:9, name:"SalsaFit Perú", color:"#3C3489",
-    sedes:["Magdalena","Surco","Los Olivos"],
-    estilos:["Salsa","Bachata","Merengue"],
-    tel:"", web:"salsafitperu.com",
-    nota:"Enfoque fitness + social · 3 distritos" },
-  { id:10, name:"TFS Perú", color:"#58574F",
-    sedes:["San Miguel"],
-    estilos:["Hip Hop","Bachata","Salsa","Reggaetón","Street Jazz"],
-    tel:"+51 987 566 071", web:"",
-    nota:"Metodología rápida · formación integral" },
-];
-
-const CLASSES = [
-  {sid:1,day:1,hora:"18:00",estilo:"Salsa",nivel:"Básico",prof:"Rosa Lazo",sede:"Surco – Av. Benavides 4600"},
-  {sid:1,day:1,hora:"20:00",estilo:"Hip Hop",nivel:"Intermedio",prof:"Nick Sifuentes",sede:"San Borja – Av. San Luis"},
-  {sid:1,day:2,hora:"19:00",estilo:"Bachata",nivel:"Básico",prof:"Andrea Vega",sede:"Magdalena – Av. Brasil"},
-  {sid:1,day:3,hora:"18:30",estilo:"Salsa",nivel:"Avanzado",prof:"Rosa Lazo",sede:"Surco – Av. Benavides 4600"},
-  {sid:1,day:3,hora:"20:00",estilo:"Street Jazz",nivel:"Intermedio",prof:"Nick Sifuentes",sede:"SJL – Zárate"},
-  {sid:1,day:4,hora:"19:00",estilo:"Reggaetón",nivel:"Básico",prof:"Claudia Torres",sede:"San Borja – Av. San Luis"},
-  {sid:1,day:5,hora:"18:00",estilo:"Hip Hop",nivel:"Avanzado",prof:"Nick Sifuentes",sede:"Surco – Av. Benavides 4600"},
-  {sid:1,day:6,hora:"10:00",estilo:"Salsa",nivel:"Básico",prof:"Rosa Lazo",sede:"Magdalena – Av. Brasil"},
-  {sid:2,day:1,hora:"19:00",estilo:"Bachata",nivel:"Básico",prof:"Instr. EBAC",sede:"Miraflores – Av. Ejército 612"},
-  {sid:2,day:2,hora:"18:00",estilo:"Salsa",nivel:"Intermedio",prof:"Instr. EBAC",sede:"La Molina – Javier Prado E."},
-  {sid:2,day:3,hora:"19:00",estilo:"Hip Hop",nivel:"Básico",prof:"Instr. EBAC",sede:"Los Olivos – Av. Universitaria"},
-  {sid:2,day:4,hora:"18:00",estilo:"Bachata",nivel:"Avanzado",prof:"Instr. EBAC",sede:"Miraflores – Av. Ejército 612"},
-  {sid:2,day:5,hora:"19:30",estilo:"Salsa",nivel:"Avanzado",prof:"Instr. EBAC",sede:"La Molina – Javier Prado E."},
-  {sid:2,day:6,hora:"11:00",estilo:"Afrobeat",nivel:"Básico",prof:"Instr. EBAC",sede:"Miraflores – Av. Ejército 612"},
-  {sid:3,day:1,hora:"18:00",estilo:"Salsa Cubana",nivel:"Básico",prof:"Prof. Torres",sede:"Surco – La Encalada 661"},
-  {sid:3,day:2,hora:"19:00",estilo:"Bachata",nivel:"Intermedio",prof:"Prof. Torres",sede:"San Borja – Av. San Luis 1881"},
-  {sid:3,day:3,hora:"18:00",estilo:"Rueda Casino",nivel:"Intermedio",prof:"Prof. Quispe",sede:"Surco – La Encalada 661"},
-  {sid:3,day:4,hora:"19:30",estilo:"Salsa",nivel:"Avanzado",prof:"Prof. Torres",sede:"Surquillo – Av. Ricardo Palma 156"},
-  {sid:3,day:5,hora:"18:00",estilo:"Afrocubano",nivel:"Básico",prof:"Prof. Quispe",sede:"San Borja – Av. San Luis 1881"},
-  {sid:3,day:6,hora:"09:00",estilo:"Salsa Cubana",nivel:"Básico",prof:"Prof. Torres",sede:"Surco – La Encalada 661"},
-  {sid:4,day:1,hora:"20:00",estilo:"Salsa Cubana",nivel:"Básico",prof:"Instructor CG",sede:"Miraflores – sede principal"},
-  {sid:4,day:2,hora:"19:00",estilo:"Timba",nivel:"Intermedio",prof:"Instructor CG",sede:"Barranco – sede Barranco"},
-  {sid:4,day:3,hora:"20:00",estilo:"Salsa Cubana",nivel:"Avanzado",prof:"Instructor CG",sede:"Miraflores – sede principal"},
-  {sid:4,day:4,hora:"19:00",estilo:"Afrocubano",nivel:"Básico",prof:"Instructor CG",sede:"Barranco – sede Barranco"},
-  {sid:4,day:6,hora:"11:00",estilo:"Timba",nivel:"Básico",prof:"Instructor CG",sede:"Miraflores – sede principal"},
-  {sid:5,day:1,hora:"19:30",estilo:"Bachata",nivel:"Básico",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:5,day:2,hora:"19:30",estilo:"Salsa",nivel:"Básico",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:5,day:3,hora:"19:30",estilo:"Bachata",nivel:"Intermedio",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:5,day:4,hora:"19:30",estilo:"Salsa",nivel:"Intermedio",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:5,day:5,hora:"20:00",estilo:"Bachata",nivel:"Avanzado",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:5,day:6,hora:"10:00",estilo:"Ritmos Latinos",nivel:"Básico",prof:"Beto (Alberto)",sede:"Miraflores – Calle Berlín 231"},
-  {sid:6,day:1,hora:"18:30",estilo:"Salsa",nivel:"Básico",prof:"E. Pacheco",sede:"Miraflores – límite San Isidro"},
-  {sid:6,day:2,hora:"18:30",estilo:"Bachata",nivel:"Básico",prof:"E. Pacheco",sede:"Miraflores – límite San Isidro"},
-  {sid:6,day:3,hora:"19:00",estilo:"Jazz",nivel:"Intermedio",prof:"E. Pacheco",sede:"Miraflores – límite San Isidro"},
-  {sid:6,day:4,hora:"18:30",estilo:"Merengue",nivel:"Básico",prof:"E. Pacheco",sede:"San Isidro – sede"},
-  {sid:6,day:5,hora:"19:00",estilo:"Hip Hop",nivel:"Básico",prof:"E. Pacheco",sede:"Miraflores – límite San Isidro"},
-  {sid:6,day:6,hora:"10:00",estilo:"Salsa",nivel:"Avanzado",prof:"E. Pacheco",sede:"Miraflores – límite San Isidro"},
-  {sid:7,day:1,hora:"19:00",estilo:"Contemporáneo",nivel:"Básico",prof:"Instr. D1",sede:"Miraflores – sede"},
-  {sid:7,day:2,hora:"18:00",estilo:"Salsa",nivel:"Básico",prof:"Instr. D1",sede:"San Borja – sede"},
-  {sid:7,day:3,hora:"19:00",estilo:"Bachata",nivel:"Intermedio",prof:"Instr. D1",sede:"Miraflores – sede"},
-  {sid:7,day:4,hora:"18:00",estilo:"Hip Hop",nivel:"Básico",prof:"Instr. D1",sede:"San Borja – sede"},
-  {sid:7,day:5,hora:"19:30",estilo:"Jazz",nivel:"Avanzado",prof:"Instr. D1",sede:"Miraflores – sede"},
-  {sid:7,day:6,hora:"10:30",estilo:"Contemporáneo",nivel:"Básico",prof:"Instr. D1",sede:"Miraflores – sede"},
-  {sid:8,day:1,hora:"10:00",estilo:"Tango",nivel:"Básico",prof:"Instr. AM",sede:"Miraflores – sede"},
-  {sid:8,day:1,hora:"19:00",estilo:"Salsa",nivel:"Intermedio",prof:"Instr. AM",sede:"Miraflores – sede"},
-  {sid:8,day:2,hora:"10:00",estilo:"Vals",nivel:"Básico",prof:"Instr. AM",sede:"San Isidro – sede"},
-  {sid:8,day:3,hora:"19:00",estilo:"Bachata",nivel:"Básico",prof:"Instr. AM",sede:"Miraflores – sede"},
-  {sid:8,day:4,hora:"10:00",estilo:"Swing",nivel:"Básico",prof:"Instr. AM",sede:"San Isidro – sede"},
-  {sid:8,day:5,hora:"19:00",estilo:"Samba",nivel:"Básico",prof:"Instr. AM",sede:"Miraflores – sede"},
-  {sid:8,day:6,hora:"11:00",estilo:"Tango",nivel:"Intermedio",prof:"Instr. AM",sede:"Miraflores – sede"},
-  {sid:9,day:1,hora:"19:00",estilo:"Salsa",nivel:"Básico",prof:"Instr. SF",sede:"Magdalena – sede"},
-  {sid:9,day:2,hora:"19:00",estilo:"Bachata",nivel:"Básico",prof:"Instr. SF",sede:"Surco – sede"},
-  {sid:9,day:3,hora:"19:30",estilo:"Salsa",nivel:"Intermedio",prof:"Instr. SF",sede:"Los Olivos – sede"},
-  {sid:9,day:4,hora:"19:00",estilo:"Merengue",nivel:"Básico",prof:"Instr. SF",sede:"Magdalena – sede"},
-  {sid:9,day:5,hora:"19:00",estilo:"Bachata",nivel:"Avanzado",prof:"Instr. SF",sede:"Surco – sede"},
-  {sid:9,day:6,hora:"10:00",estilo:"Salsa",nivel:"Básico",prof:"Instr. SF",sede:"Los Olivos – sede"},
-  {sid:10,day:1,hora:"18:00",estilo:"Hip Hop",nivel:"Básico",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-  {sid:10,day:2,hora:"18:00",estilo:"Bachata",nivel:"Básico",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-  {sid:10,day:3,hora:"19:00",estilo:"Salsa",nivel:"Básico",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-  {sid:10,day:4,hora:"18:00",estilo:"Reggaetón",nivel:"Básico",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-  {sid:10,day:5,hora:"19:00",estilo:"Street Jazz",nivel:"Intermedio",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-  {sid:10,day:6,hora:"10:00",estilo:"Hip Hop",nivel:"Básico",prof:"Instr. TFS",sede:"San Miguel – Av. La Marina"},
-];
-
-const DAYS_ES = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-const MAIN_ESTILOS = ["Salsa","Bachata","Salsa Cubana","Merengue","Hip Hop"];
-const ALL_ESTILOS = ["Todos",...MAIN_ESTILOS,"Otros"];
-
-/* ════════════════════════════════════════
-   STATE
-════════════════════════════════════════ */
-let currentTab = 'home';
-let weekOffset = 0;
-let calFilter = 'Todos';
-let hiddenSchools = new Set();
-let schoolsFilter = 'Todos';
-let favorites = JSON.parse(localStorage.getItem('rl_favs') || '[]');
-let currentModalSchoolId = null;
-
-function saveFavs() { localStorage.setItem('rl_favs', JSON.stringify(favorites)); }
-function isFav(id) { return favorites.includes(id); }
-function toggleFav(id) {
-  if (isFav(id)) {
-    favorites = favorites.filter(f => f !== id);
-    showToast('Eliminado de favoritos');
-  } else {
-    favorites.push(id);
-    showToast('Añadido a favoritos ★');
-  }
-  saveFavs();
-  renderFavPage();
-  renderSchoolsList();
-}
-
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
-function getSchool(id) { return SCHOOLS.find(s => s.id === id); }
-function getMonday(offset) {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff + offset * 7); d.setHours(0,0,0,0);
-  return d;
-}
-function fmtDate(d) { return d.toLocaleDateString('es-PE',{day:'numeric',month:'short'}); }
-function todayDayNum() {
-  const d = new Date().getDay();
-  return d === 0 ? 7 : d;
-}
-function matchCalFilter(cls) {
-  if (calFilter === 'Todos') return true;
-  if (calFilter === 'Otros') return !MAIN_ESTILOS.some(e => cls.estilo.toLowerCase().includes(e.toLowerCase()));
-  return cls.estilo.toLowerCase().includes(calFilter.toLowerCase());
-}
-function matchSchoolFilter(school) {
-  if (schoolsFilter === 'Todos') return true;
-  if (schoolsFilter === 'Otros') return !school.estilos.some(e => MAIN_ESTILOS.some(m => e.toLowerCase().includes(m.toLowerCase())));
-  return school.estilos.some(e => e.toLowerCase().includes(schoolsFilter.toLowerCase()));
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-/* ════════════════════════════════════════
-   NAVIGATION
-════════════════════════════════════════ */
-function showTab(tab) {
-  if (tab === currentTab && tab !== 'home') {
-    document.getElementById('scroll-area').scrollTo(0,0);
-    return;
-  }
-  currentTab = tab;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(`page-${tab}`).classList.add('active');
-  const navTab = document.querySelector(`[data-tab="${tab}"]`);
-  if (navTab) navTab.classList.add('active');
-  document.getElementById('scroll-area').scrollTo(0,0);
-
-  if (tab === 'calendario') renderCalendar();
-  if (tab === 'favs') renderFavPage();
-  if (tab === 'escuelas') renderSchoolsList();
-  closeSearch();
-}
-
-function goHome() { showTab('home'); }
-
-function showDetail(schoolId) {
-  currentTab = 'detail';
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-detail').classList.add('active');
-  document.getElementById('scroll-area').scrollTo(0,0);
-  renderDetail(schoolId);
-}
-
-/* ════════════════════════════════════════
-   HOME
-════════════════════════════════════════ */
-function renderHome() {
-  renderTodayStrip();
-  renderSchoolsStrip();
-}
-
-function renderTodayStrip() {
-  const strip = document.getElementById('today-strip');
-  const todayNum = todayDayNum();
-  const todayClasses = CLASSES
-    .filter(c => c.day === todayNum)
-    .sort((a,b) => a.hora.localeCompare(b.hora));
-
-  if (todayClasses.length === 0) {
-    strip.innerHTML = '<div class="no-today">No hay clases registradas para hoy</div>';
-    return;
-  }
-  strip.innerHTML = '';
-  todayClasses.slice(0, 8).forEach(cls => {
-    const sch = getSchool(cls.sid);
-    const card = document.createElement('div');
-    card.className = 'today-card';
-    card.style.setProperty('--sc', sch.color);
-    card.innerHTML = `
-      <div class="today-card-school">${sch.name.split(' ').slice(0,2).join(' ')}</div>
-      <div class="today-card-time">${cls.hora}</div>
-      <div class="today-card-estilo">${cls.estilo}</div>
-      <div class="today-card-nivel">${cls.nivel}</div>
-      <div class="today-card-sede">${cls.sede}</div>`;
-    card.addEventListener('click', () => openModal(cls, sch));
-    strip.appendChild(card);
-  });
-}
-
-function renderSchoolsStrip() {
-  const strip = document.getElementById('schools-strip');
-  strip.innerHTML = '';
-  SCHOOLS.forEach((s, i) => {
-    const card = document.createElement('div');
-    card.className = 'school-mini';
-    card.style.setProperty('--sc', s.color);
-    card.innerHTML = `
-      <div class="fav-star" title="${isFav(s.id) ? 'Quitar favorito' : 'Guardar'}">${isFav(s.id) ? '★' : '☆'}</div>
-      <div class="sm-rank">${String(i+1).padStart(2,'0')}</div>
-      <div class="sm-name">${s.name}</div>
-      <div class="sm-sedes">📍 ${s.sedes.slice(0,2).join(', ')}${s.sedes.length>2?'…':''}</div>
-      <div class="sm-tags">${s.estilos.slice(0,3).map(e=>`<span class="sm-tag">${e}</span>`).join('')}</div>`;
-    card.querySelector('.fav-star').addEventListener('click', e => { e.stopPropagation(); toggleFav(s.id); renderSchoolsStrip(); });
-    card.addEventListener('click', () => showDetail(s.id));
-    strip.appendChild(card);
-  });
-}
-
-/* ════════════════════════════════════════
-   SCHOOLS LIST
-════════════════════════════════════════ */
-function renderEstiloChips() {
-  const cont = document.getElementById('estilo-chips');
-  cont.innerHTML = '';
-  ALL_ESTILOS.forEach(e => {
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (schoolsFilter === e ? ' on' : '');
-    chip.textContent = e;
-    chip.addEventListener('click', () => { schoolsFilter = e; renderEstiloChips(); renderSchoolsList(); });
-    cont.appendChild(chip);
-  });
-}
-
-function renderSchoolsList() {
-  const list = document.getElementById('schools-list');
-  list.innerHTML = '';
-  const filtered = SCHOOLS.filter(matchSchoolFilter);
-  document.getElementById('schools-count').textContent = `${filtered.length} escuelas encontradas`;
-  filtered.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.className = 'school-row';
-    row.style.setProperty('--sc', s.color);
-    row.innerHTML = `
-      <div class="school-row-num">${String(SCHOOLS.indexOf(s)+1).padStart(2,'0')}</div>
-      <div class="school-row-body">
-        <div class="school-row-name">${s.name}</div>
-        <div class="school-row-sedes">📍 ${s.sedes.join(' · ')}</div>
-        <div class="school-row-tags">${s.estilos.slice(0,4).map(e=>`<span class="sm-tag">${e}</span>`).join('')}</div>
-      </div>
-      <div class="school-row-right">
-        <span class="school-row-fav">${isFav(s.id) ? '★' : '☆'}</span>
-        <span class="school-row-chevron">›</span>
-      </div>`;
-    row.querySelector('.school-row-fav').addEventListener('click', e => { e.stopPropagation(); toggleFav(s.id); renderSchoolsList(); });
-    row.addEventListener('click', () => showDetail(s.id));
-    list.appendChild(row);
-  });
-}
-
-/* ════════════════════════════════════════
-   DETAIL
-════════════════════════════════════════ */
-function renderDetail(schoolId) {
-  const s = getSchool(schoolId);
-  const schoolClasses = CLASSES.filter(c => c.sid === schoolId).sort((a,b) => a.day - b.day || a.hora.localeCompare(b.hora));
-  const cont = document.getElementById('detail-content');
-  cont.innerHTML = `
-    <div class="detail-hero">
-      <div class="detail-hero-bg" style="background:radial-gradient(ellipse 80% 80% at 70% 30%, ${s.color}33 0%, transparent 70%)"></div>
-      <button class="detail-back" onclick="showTab('escuelas')">← Escuelas</button>
-      <div class="detail-color-bar" style="background:${s.color}"></div>
-      <div class="detail-name">${s.name}</div>
-      <div class="detail-sedes">📍 ${s.sedes.join(' · ')}</div>
-      <div class="detail-nota">${s.nota}</div>
-      <div class="detail-actions">
-        <button class="detail-action-btn" id="det-fav-btn" onclick="toggleFav(${s.id}); renderDetail(${s.id})">
-          <span>${isFav(s.id) ? '★' : '☆'}</span>
-          <span>${isFav(s.id) ? 'Guardado' : 'Guardar'}</span>
-        </button>
-        ${s.tel ? `<button class="detail-action-btn" onclick="window.location='tel:${s.tel}'">📞 Llamar</button>` : ''}
-        ${s.tel ? `<a class="detail-action-btn" href="https://wa.me/${s.tel.replace(/\D/g,'')}" target="_blank" style="text-decoration:none">💬 WhatsApp</a>` : ''}
-        ${s.web ? `<button class="detail-action-btn" onclick="window.open('https://${s.web}','_blank')">🌐 Web</button>` : ''}
+  <section id="como-funciona">
+    <div class="container">
+      <h2 class="section-title">¿Cómo funciona?</h2>
+      <p class="section-sub">En tres simples pasos</p>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Encuentra una bici</h3>
+          <p>Explora las bicicletas disponibles en Lima. Filtra por ubicación, precio y tipo de bicicleta.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Contacta al dueño</h3>
+          <p>Comunícate directamente con el propietario vía WhatsApp para coordinar lugar y hora.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>¡Pedalea!</h3>
+          <p>Recoge la bici, disfruta tu paseo por Lima y devuélvela según lo acordado.</p>
+        </div>
       </div>
     </div>
-    <div class="detail-section">
-      <div class="detail-section-title">Estilos</div>
-      <div class="estilo-pills">${s.estilos.map(e=>`<span class="estilo-pill">${e}</span>`).join('')}</div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-section-title">Sedes</div>
-      ${s.sedes.map(sede => `<div class="sede-chip"><div class="sede-chip-dot" style="background:${s.color}"></div>${sede}</div>`).join('')}
-    </div>
-    <div class="detail-section" style="padding-bottom:1.5rem">
-      <div class="detail-section-title">Clases semanales (${schoolClasses.length} clases)</div>
-      <div class="detail-classes">${schoolClasses.map(cls => `
-        <div class="detail-class-card" style="--sc:${s.color}">
-          <div class="dc-row1">
-            <div class="dc-time">${cls.hora}</div>
-            <div class="dc-day">${DAYS_ES[cls.day-1]}</div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-list">
+          <h2 class="section-title" style="text-align:left; margin-bottom:1.5rem;">¿Por qué<br>Lima Bike Share?</h2>
+          <div class="feature-item">
+            <div class="feature-icon">✓</div>
+            <div>
+              <h3>Comunidad confiable</h3>
+              <p>Todos los usuarios son verificados con DNI o pasaporte para garantizar transacciones seguras.</p>
+            </div>
           </div>
-          <div class="dc-estilo">${cls.estilo}</div>
-          <div class="dc-meta">${cls.nivel} · ${cls.prof}</div>
-          <div class="dc-meta" style="margin-top:3px">${cls.sede}</div>
-        </div>`).join('')}
+          <div class="feature-item">
+            <div class="feature-icon">🌱</div>
+            <div>
+              <h3>Transporte sostenible</h3>
+              <p>Contribuye a reducir la contaminación en Lima con movilidad limpia y accesible.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">💰</div>
+            <div>
+              <h3>Precios justos</h3>
+              <p>Alquila por horas a precios accesibles, o gana dinero compartiendo tu bici.</p>
+            </div>
+          </div>
+        </div>
+        <div class="features-img" style="background:linear-gradient(160deg,#bfecdd,#f0fdf4);">
+          <canvas id="featCanvas" width="680" height="400" style="width:100%;height:100%;display:block;"></canvas>
+        </div>
       </div>
-    </div>`;
-}
+    </div>
+  </section>
 
-/* ════════════════════════════════════════
-   CALENDAR
-════════════════════════════════════════ */
-function renderCalFilters() {
-  const cont = document.getElementById('cal-filters');
-  if (cont.children.length > 0) return;
-  ALL_ESTILOS.forEach(e => {
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (calFilter === e ? ' on' : '');
-    chip.textContent = e;
-    chip.dataset.estilo = e;
-    chip.addEventListener('click', () => {
-      calFilter = e;
-      cont.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.estilo === e));
-      renderCalGrid();
-    });
-    cont.appendChild(chip);
-  });
-}
+  <section id="bicicletas" class="bg-light">
+    <div class="container">
+      <h2 class="section-title">Bicicletas Disponibles</h2>
+      <p class="section-sub">Encuentra tu bici ideal en Lima</p>
+      <div id="bikeList" class="bikes-grid">
+        <div class="empty-state">
+          <h3>🚲 ¡Sé el primero!</h3>
+          <p>Aún no hay bicicletas disponibles. <a href="#agregar" onclick="scrollToSection('agregar'); return false;">Comparte la tuya</a> y empieza la comunidad.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-function renderCalLegend() {
-  const el = document.getElementById('cal-legend');
-  el.innerHTML = '';
-  SCHOOLS.forEach(s => {
-    const item = document.createElement('div');
-    item.className = 'leg' + (hiddenSchools.has(s.id) ? ' off' : '');
-    item.innerHTML = `<div class="leg-dot" style="background:${s.color}"></div><span>${s.name.split(' ')[0]}</span>`;
-    item.addEventListener('click', () => {
-      if (hiddenSchools.has(s.id)) hiddenSchools.delete(s.id);
-      else hiddenSchools.add(s.id);
-      item.classList.toggle('off');
-      renderCalGrid();
-    });
-    el.appendChild(item);
-  });
-}
+  <section id="agregar">
+    <div class="container">
+      <h2 class="section-title">Comparte tu Bicicleta</h2>
+      <p class="section-sub">Ayuda a otros ciclistas y gana dinero compartiendo tu bicicleta</p>
+      <div class="form-container">
+        <div id="addBikeGate" class="add-gate">
+          <div class="gate-icon">🔒</div>
+          <h3>Necesitas una cuenta para publicar</h3>
+          <p>Crea tu cuenta gratis o inicia sesión para compartir tu bicicleta y empezar a ganar dinero.</p>
+          <div class="gate-actions">
+            <button onclick="testSignup(); return false;" class="btn btn-green">Crear cuenta gratis</button>
+            <button onclick="testLogin(); return false;" class="btn btn-outline">Ya tengo cuenta</button>
+          </div>
+        </div>
+        <form id="addBikeForm" style="display:none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bikeName">Nombre/Marca de la bici *</label>
+              <input type="text" id="bikeName" required placeholder="Ej. Trek Marlin 5">
+            </div>
+            <div class="form-group">
+              <label for="bikeLocation">Ubicación (distrito) *</label>
+              <input type="text" id="bikeLocation" required placeholder="Ej. Miraflores">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bikeHourlyPrice">Precio por hora (S/) *</label>
+              <input type="number" id="bikeHourlyPrice" min="1" required placeholder="10">
+            </div>
+            <div class="form-group">
+              <label for="bikeDailyPrice">Precio por día (S/) *</label>
+              <input type="number" id="bikeDailyPrice" min="1" required placeholder="50">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bikeWhatsapp">WhatsApp *</label>
+            <input type="text" id="bikeWhatsapp" placeholder="+51 999 999 999" required>
+          </div>
+          <div class="form-group">
+            <label for="bikeDescription">Descripción de la bicicleta *</label>
+            <textarea id="bikeDescription" rows="4" maxlength="500" required placeholder="Describe tu bicicleta, su estado, características especiales, etc. (máximo 500 caracteres)"></textarea>
+            <small>Máximo 500 caracteres</small>
+          </div>
+          <div class="form-group">
+            <label>Accesorios incluidos (opcional)</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label"><input type="checkbox" id="includesHelmet" style="width:auto;"> 🪖 Casco</label>
+              <label class="checkbox-label"><input type="checkbox" id="includesLock" style="width:auto;"> 🔒 Candado</label>
+              <label class="checkbox-label"><input type="checkbox" id="includesLights" style="width:auto;"> 💡 Luces LED</label>
+              <label class="checkbox-label"><input type="checkbox" id="includesBasket" style="width:auto;"> 🧺 Canasta</label>
+            </div>
+            <small>Selecciona los accesorios que incluyes con el alquiler</small>
+          </div>
+          <div class="form-group">
+            <label for="photoInput">Foto principal de la bici *</label>
+            <input type="file" id="photoInput" accept="image/*" required>
+          </div>
+          <div class="form-group">
+            <label for="additionalPhotos">Fotos adicionales (opcional)</label>
+            <input type="file" id="additionalPhotos" accept="image/*" multiple>
+            <small>Puedes subir hasta 4 fotos adicionales</small>
+          </div>
+          <div style="text-align: center; margin-top: 1rem;">
+            <button type="submit" class="btn btn-green" style="padding: 14px 36px;">Publicar Bicicleta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
 
-function renderCalGrid() {
-  const monday = getMonday(weekOffset);
-  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
-  document.getElementById('cal-week-range').textContent = `${fmtDate(monday)} — ${fmtDate(sunday)}`;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-  for (let d = 0; d < 7; d++) {
-    const dayDate = new Date(monday); dayDate.setDate(monday.getDate() + d);
-    const isToday = dayDate.getTime() === today.getTime() && weekOffset === 0;
-    const col = document.createElement('div'); col.className = 'day-col';
-    const head = document.createElement('div');
-    head.className = 'day-head' + (isToday ? ' today' : '');
-    head.innerHTML = `${DAYS_ES[d]}<br>${dayDate.getDate()}`;
-    col.appendChild(head);
-    const body = document.createElement('div'); body.className = 'day-body';
-    const dayCls = CLASSES
-      .filter(c => c.day === d+1 && !hiddenSchools.has(c.sid) && matchCalFilter(c))
-      .sort((a,b) => a.hora.localeCompare(b.hora));
-    if (dayCls.length === 0) {
-      const emp = document.createElement('div'); emp.className = 'no-class'; emp.textContent = '—';
-      body.appendChild(emp);
-    } else {
-      dayCls.forEach(cls => {
-        const sch = getSchool(cls.sid);
-        const pill = document.createElement('div');
-        pill.className = 'cpill';
-        pill.style.setProperty('--pc', sch.color);
-        pill.innerHTML = `<div class="cpill-s">${sch.name.split(' ')[0]}</div><div class="cpill-t">${cls.hora}</div><div class="cpill-e">${cls.estilo}</div><div class="cpill-n">${cls.nivel}</div>`;
-        pill.addEventListener('click', () => openModal(cls, sch));
-        body.appendChild(pill);
+  <!-- BIKE DETAIL -->
+  <div id="bikeDetailPage">
+    <div class="container">
+      <button class="detail-back" onclick="showMainPage()">← Volver a todas las bicicletas</button>
+      <div class="detail-grid">
+        <div>
+          <img id="mainBikePhoto" class="main-photo" alt="Bike photo">
+          <div id="photoThumbnails" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+        </div>
+        <div>
+          <h1 id="bikeDetailName" style="font-size: 1.8rem; font-weight: 800; letter-spacing:-0.5px; margin-bottom: 1rem;"></h1>
+          <div class="detail-info-box">
+            <div class="price-row">
+              <div class="price-block"><strong id="bikeDetailHourlyPrice"></strong><span>por hora</span></div>
+              <div class="price-block"><strong id="bikeDetailDailyPrice"></strong><span>por día</span></div>
+            </div>
+            <div style="font-size:0.9rem; color: var(--text-muted);">📍 <span id="bikeDetailLocation"></span></div>
+          </div>
+          <div class="owner-card">
+            <div class="owner-avatar" id="ownerAvatar"></div>
+            <div><div class="owner-name" id="bikeOwnerName"></div><div class="owner-tag">✅ Propietario verificado</div></div>
+          </div>
+          <div style="margin-bottom: 1.25rem;">
+            <div class="detail-section-title">Descripción</div>
+            <p id="bikeDetailDescription" style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.7;"></p>
+          </div>
+          <div id="bikeAccessories" style="margin-bottom: 1.25rem; display: none;">
+            <div class="detail-section-title">Accesorios incluidos</div>
+            <div id="bikeAccessoriesList" class="accessories-list"></div>
+          </div>
+          <div style="margin-bottom: 1.25rem;">
+            <div class="detail-section-title">Ubicación</div>
+            <div style="width:100%; height:200px; border-radius:var(--radius-sm); overflow:hidden; border: 1px solid var(--border);">
+              <iframe id="bikeMapIframe" width="100%" height="200" style="border:0;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src=""></iframe>
+            </div>
+            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:6px;">📍 <span id="mapLocationName"></span></p>
+          </div>
+          <div class="booking-box">
+            <h3>Solicitar Reserva</h3>
+            <form id="bookingRequestForm">
+              <div class="form-row">
+                <div class="form-group"><label for="bookingStartDate">Fecha de inicio</label><input type="date" id="bookingStartDate" required></div>
+                <div class="form-group"><label for="bookingEndDate">Fecha de fin</label><input type="date" id="bookingEndDate" required></div>
+              </div>
+              <div class="form-group">
+                <label for="bookingMessage">Mensaje (opcional)</label>
+                <textarea id="bookingMessage" rows="3" placeholder="Cuéntale al propietario sobre tu plan de uso..."></textarea>
+              </div>
+              <div class="booking-total-box">
+                <strong>Total estimado:</strong> <span id="bookingTotal">S/ 0</span><br>
+                <small>El precio final se confirmará con el propietario</small>
+              </div>
+              <button type="submit" class="btn btn-green" style="width: 100%; margin-top: 0.5rem;">Enviar solicitud por WhatsApp 💬</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <span class="footer-logo">🚲 Lima Bike Share</span>
+      <p>Transporte sostenible para una ciudad mejor</p>
+    </div>
+  </footer>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('loginModal')">&times;</span>
+      <h3>Iniciar Sesión</h3>
+      <p class="modal-sub">Accede a tu cuenta para gestionar tus bicicletas</p>
+      <form id="loginForm">
+        <div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" required placeholder="tu@email.com"></div>
+        <div class="form-group"><label for="loginPassword">Contraseña</label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
+        <div class="modal-buttons">
+          <button type="button" onclick="closeModal('loginModal')" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-green">Iniciar Sesión</button>
+        </div>
+      </form>
+      <p class="modal-link">¿No tienes cuenta? <a href="#" onclick="closeModal('loginModal'); testSignup();">Regístrate aquí</a></p>
+    </div>
+  </div>
+
+  <!-- SIGNUP MODAL -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('signupModal')">&times;</span>
+      <h3>Crear Cuenta</h3>
+      <p class="modal-sub">Únete a la comunidad de ciclistas de Lima</p>
+      <form id="signupForm">
+        <div class="form-row">
+          <div class="form-group"><label for="signupName">Nombre completo *</label><input type="text" id="signupName" required placeholder="Tu nombre"></div>
+          <div class="form-group"><label for="signupEmail">Email *</label><input type="email" id="signupEmail" required placeholder="tu@email.com"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="signupPassword">Contraseña *</label><input type="password" id="signupPassword" minlength="6" required placeholder="Mínimo 6 caracteres"></div>
+          <div class="form-group"><label for="confirmPassword">Confirmar Contraseña *</label><input type="password" id="confirmPassword" minlength="6" required placeholder="Repite tu contraseña"></div>
+        </div>
+        <div class="form-group">
+          <label for="signupDocument">DNI o Pasaporte *</label>
+          <input type="file" id="signupDocument" accept="image/*,.pdf" required>
+          <small>Sube una foto clara de tu DNI o pasaporte para verificación</small>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" onclick="closeModal('signupModal')" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-green">Crear Cuenta</button>
+        </div>
+      </form>
+      <p class="modal-link">¿Ya tienes cuenta? <a href="#" onclick="closeModal('signupModal'); testLogin();">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+
+  <!-- EDIT BIKE MODAL -->
+  <div id="editBikeModal" class="modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <span class="close" onclick="closeModal('editBikeModal')">&times;</span>
+      <h3>Editar Bicicleta</h3>
+      <form id="editBikeForm" style="margin-top: 1.25rem;">
+        <input type="hidden" id="editBikeId">
+        <div class="form-row">
+          <div class="form-group"><label for="editBikeName">Nombre/Marca *</label><input type="text" id="editBikeName" required></div>
+          <div class="form-group"><label for="editBikeLocation">Ubicación (distrito) *</label><input type="text" id="editBikeLocation" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="editBikeHourlyPrice">Precio por hora (S/) *</label><input type="number" id="editBikeHourlyPrice" min="1" required></div>
+          <div class="form-group"><label for="editBikeDailyPrice">Precio por día (S/) *</label><input type="number" id="editBikeDailyPrice" min="1" required></div>
+        </div>
+        <div class="form-group"><label for="editBikeWhatsapp">WhatsApp *</label><input type="text" id="editBikeWhatsapp" placeholder="+51 999 999 999" required></div>
+        <div class="form-group"><label for="editBikeDescription">Descripción *</label><textarea id="editBikeDescription" rows="4" maxlength="500" required></textarea></div>
+        <div class="form-group">
+          <label>Accesorios incluidos</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label"><input type="checkbox" id="editIncludesHelmet" style="width:auto;"> 🪖 Casco</label>
+            <label class="checkbox-label"><input type="checkbox" id="editIncludesLock" style="width:auto;"> 🔒 Candado</label>
+            <label class="checkbox-label"><input type="checkbox" id="editIncludesLights" style="width:auto;"> 💡 Luces LED</label>
+            <label class="checkbox-label"><input type="checkbox" id="editIncludesBasket" style="width:auto;"> 🧺 Canasta</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="editPhotoInput">Cambiar foto principal (opcional)</label>
+          <input type="file" id="editPhotoInput" accept="image/*">
+          <small>Déjalo vacío para mantener la foto actual</small>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" onclick="closeModal('editBikeModal')" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-green">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXakyynQQmdsGCiLyol3lJryjElCsH9gk",
+      authDomain: "bike-share-lima.firebaseapp.com",
+      projectId: "bike-share-lima",
+      storageBucket: "bike-share-lima.firebasestorage.app",
+      messagingSenderId: "742260721560",
+      appId: "1:742260721560:web:18e7fbafc5ea173d818ded",
+      measurementId: "G-NQEVLSLL46"
+    };
+
+    let auth, db, currentUser = null, isAdmin = false;
+    const adminEmails = ['tilmankneepkens@gmail.com', 'tilmannathaniel@gmail.com'];
+
+    try {
+      if (typeof firebase === 'undefined') throw new Error('Firebase SDK no cargó.');
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+      window.addEventListener('DOMContentLoaded', function() {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px 20px;text-align:center;position:fixed;top:64px;left:0;right:0;z-index:9999;font-size:0.95rem;';
+        banner.textContent = '⚠️ Error de conexión con el servidor. Recarga la página o comprueba tu internet.';
+        document.body.appendChild(banner);
       });
     }
-    col.appendChild(body);
-    grid.appendChild(col);
-  }
-}
 
-function renderCalendar() {
-  renderCalFilters();
-  if (!document.getElementById('cal-legend').children.length) renderCalLegend();
-  renderCalGrid();
-}
+    let currentBike = null;
+    window.showMainPage = showMainPage;
+    window.showBikeDetail = showBikeDetail;
 
-document.getElementById('cal-prev').addEventListener('click', () => { weekOffset--; renderCalGrid(); });
-document.getElementById('cal-next').addEventListener('click', () => { weekOffset++; renderCalGrid(); });
-
-/* ════════════════════════════════════════
-   FAVORITES
-════════════════════════════════════════ */
-function renderFavPage() {
-  const cont = document.getElementById('fav-content');
-  document.getElementById('fav-count').textContent = `${favorites.length} escuela${favorites.length !== 1 ? 's' : ''} guardada${favorites.length !== 1 ? 's' : ''}`;
-  if (favorites.length === 0) {
-    cont.innerHTML = `<div class="fav-empty"><div class="fav-empty-icon">★</div><div class="fav-empty-text">Aún no tienes favoritos.<br>Guarda escuelas tocando ☆ en cualquier vista.</div></div>`;
-    return;
-  }
-  const favSchools = favorites.map(id => getSchool(id)).filter(Boolean);
-  cont.innerHTML = `<div class="fav-grid">${favSchools.map(s => `
-    <div class="fav-card" style="--sc:${s.color}" onclick="showDetail(${s.id})">
-      <span class="fav-remove" onclick="event.stopPropagation();toggleFav(${s.id})">✕</span>
-      <div class="fav-card-name">${s.name}</div>
-      <div class="fav-card-sedes">${s.sedes.slice(0,2).join(' · ')}</div>
-      <div class="fav-card-tags">${s.estilos.slice(0,3).map(e=>`<span class="sm-tag">${e}</span>`).join('')}</div>
-    </div>`).join('')}</div>`;
-}
-
-/* ════════════════════════════════════════
-   MODAL
-════════════════════════════════════════ */
-function openModal(cls, sch) {
-  document.getElementById('modal-stripe').style.background = sch.color;
-  document.getElementById('modal-title').textContent = `${cls.estilo} · ${cls.hora}`;
-  document.getElementById('modal-school-name').textContent = sch.name;
-  currentModalSchoolId = sch.id;
-  document.getElementById('modal-rows').innerHTML = `
-    <div class="mrow"><span class="mk">Día</span><span class="mv">${DAYS_ES[cls.day-1]}</span></div>
-    <div class="mrow"><span class="mk">Horario</span><span class="mv">${cls.hora} hrs</span></div>
-    <div class="mrow"><span class="mk">Nivel</span><span class="mv">${cls.nivel}</span></div>
-    <div class="mrow"><span class="mk">Profesor</span><span class="mv">${cls.prof}</span></div>
-    <div class="mrow"><span class="mk">Sede</span><span class="mv">${cls.sede}</span></div>
-    ${sch.tel ? `<div class="mrow"><span class="mk">Tel</span><span class="mv"><a href="https://wa.me/${sch.tel.replace(/\D/g,'')}" target="_blank" style="color:${sch.color};text-decoration:none;">📱 ${sch.tel} (WhatsApp)</a></span></div>` : ''}
-    ${sch.web ? `<div class="mrow"><span class="mk">Web</span><span class="mv"><a href="https://${sch.web}" target="_blank" style="color:${sch.color};text-decoration:none;">${sch.web}</a></span></div>` : ''}`;
-  document.getElementById('modal-detail-btn').onclick = () => { closeModal(); showDetail(sch.id); };
-  document.getElementById('class-modal').classList.add('open');
-}
-
-function closeModal(event) {
-  if (!event || event.target === document.getElementById('class-modal')) {
-    document.getElementById('class-modal').classList.remove('open');
-  }
-}
-
-/* ════════════════════════════════════════
-   SEARCH
-════════════════════════════════════════ */
-const searchInput = document.getElementById('search-input');
-const searchResults = document.getElementById('search-results');
-
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.trim().toLowerCase();
-  if (!q) { closeSearch(); return; }
-  const matches = [];
-  SCHOOLS.forEach(s => {
-    if (s.name.toLowerCase().includes(q) ||
-        s.sedes.some(d => d.toLowerCase().includes(q)) ||
-        s.estilos.some(e => e.toLowerCase().includes(q))) {
-      matches.push({ type:'school', data:s });
+    function showMainPage() {
+      document.getElementById('bikeDetailPage').style.display = 'none';
+      document.querySelectorAll('section, .trust-bar').forEach(el => el.style.display = '');
+      history.pushState('', document.title, window.location.pathname);
     }
-  });
-  CLASSES.forEach(cls => {
-    const sch = getSchool(cls.sid);
-    if (cls.estilo.toLowerCase().includes(q) || cls.nivel.toLowerCase().includes(q) || cls.prof.toLowerCase().includes(q)) {
-      matches.push({ type:'class', data:cls, school:sch });
+
+    function showBikeDetail(bikeId) {
+      document.querySelectorAll('section, .trust-bar').forEach(el => el.style.display = 'none');
+      document.getElementById('bikeDetailPage').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      loadBikeDetail(bikeId);
+      history.pushState({ bikeId }, '', `#bike/${bikeId}`);
     }
-  });
-  if (matches.length === 0) {
-    searchResults.innerHTML = '<div class="sr-item"><div class="sr-info"><div class="sr-name">Sin resultados</div><div class="sr-meta">Intenta con otro término</div></div></div>';
-    searchResults.classList.add('open');
-    return;
-  }
-  const unique = matches.slice(0, 10);
-  searchResults.innerHTML = unique.map((m, i) => {
-    if (m.type === 'school') {
-      return `<div class="sr-item" data-i="${i}"><div class="sr-dot" style="background:${m.data.color}"></div><div class="sr-info"><div class="sr-name">${m.data.name}</div><div class="sr-meta">${m.data.sedes.join(' · ')}</div></div></div>`;
-    } else {
-      return `<div class="sr-item" data-i="${i}"><div class="sr-dot" style="background:${m.school.color}"></div><div class="sr-info"><div class="sr-name">${m.data.estilo} – ${m.data.hora}</div><div class="sr-meta">${m.school.name} · ${DAYS_ES[m.data.day-1]} · ${m.data.sede}</div></div></div>`;
-    }
-  }).join('');
-  searchResults.classList.add('open');
-  searchResults.querySelectorAll('.sr-item').forEach((el, i) => {
-    el.addEventListener('click', () => {
-      const m = unique[i];
-      closeSearch();
-      searchInput.value = '';
-      if (m.type === 'school') showDetail(m.data.id);
-      else { showTab('calendario'); setTimeout(() => openModal(m.data, m.school), 300); }
+
+    window.addEventListener('popstate', function(event) {
+      if (event.state && event.state.bikeId) showBikeDetail(event.state.bikeId);
+      else showMainPage();
     });
-  });
-});
 
-function closeSearch() {
-  searchResults.classList.remove('open');
-  searchResults.innerHTML = '';
-}
+    function checkInitialRoute() {
+      const bikeMatch = window.location.hash.match(/^#bike\/(.+)$/);
+      if (bikeMatch) showBikeDetail(bikeMatch[1]);
+    }
 
-document.addEventListener('click', e => {
-  if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) closeSearch();
-});
+    function showMessage(message, type = 'info') {
+      const div = document.createElement('div');
+      const isError = type === 'error';
+      div.style.cssText = `background:${isError?'#fef2f2':'#f0fdf4'};border:1px solid ${isError?'#fecaca':'#bbf7d0'};color:${isError?'#991b1b':'#166534'};border-radius:10px;padding:13px 20px;max-width:500px;text-align:center;position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:3000;font-size:0.9rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.1);`;
+      div.textContent = `${isError ? '❌' : '✅'} ${message}`;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    }
 
-/* ════════════════════════════════════════
-   PWA SERVICE WORKER
-════════════════════════════════════════ */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/ritmo-lima/sw.js').catch(() => {});
-  });
-}
+    function setupCloseHandlers() {
+      document.querySelectorAll('.close').forEach(btn => {
+        btn.onclick = e => { e.preventDefault(); const m = btn.closest('.modal'); if (m) m.style.display = 'none'; };
+      });
+      window.onclick = event => { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; };
+    }
 
-/* ════════════════════════════════════════
-   INIT
-════════════════════════════════════════ */
-renderEstiloChips();
-renderHome();
-</script>
+    if (!auth) {
+      console.warn('Firebase auth no disponible');
+    } else auth.onAuthStateChanged(function(user) {
+      if (user) {
+        currentUser = user;
+        isAdmin = adminEmails.includes(user.email);
+        const panel = document.getElementById('userPanel');
+        panel.style.display = 'block';
+        if (isAdmin) {
+          document.getElementById('userInfo').innerHTML = `🔧 ADMIN: ${user.email}`;
+          panel.style.background = '#fff7ed'; panel.style.borderColor = '#fed7aa'; panel.style.color = '#9a3412';
+        } else {
+          document.getElementById('userInfo').textContent = `Conectado como: ${user.email}`;
+        }
+        document.getElementById('logoutBtn').style.display = 'block';
+        const loginLink = document.querySelector('a.nav-btn-login[onclick*="testLogin"]');
+        const signupLink = document.querySelector('a.nav-btn-signup[onclick*="testSignup"]');
+        if (loginLink) loginLink.style.display = 'none';
+        if (signupLink) signupLink.style.display = 'none';
+        document.getElementById('addBikeForm').style.display = 'block';
+        document.getElementById('addBikeGate').style.display = 'none';
+        showMessage(isAdmin ? `Bienvenido ADMIN: ${user.email}` : `Bienvenido ${user.email}`);
+        loadBikes();
+      } else {
+        currentUser = null; isAdmin = false;
+        document.getElementById('userPanel').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('addBikeForm').style.display = 'none';
+        document.getElementById('addBikeGate').style.display = 'block';
+        const loginLink = document.querySelector('a.nav-btn-login[onclick*="testLogin"]');
+        const signupLink = document.querySelector('a.nav-btn-signup[onclick*="testSignup"]');
+        if (loginLink) loginLink.style.display = '';
+        if (signupLink) signupLink.style.display = '';
+        loadBikes();
+      }
+    });
+
+    async function uploadToCloudinary(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "mdidemll");
+      const response = await fetch(`https://api.cloudinary.com/v1_1/dzscwbwey/image/upload`, { method: "POST", body: formData });
+      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+      return (await response.json()).secure_url;
+    }
+
+    async function loadBikeDetail(bikeId) {
+      try {
+        const doc = await db.collection("bikes").doc(bikeId).get();
+        if (!doc.exists) { showMessage("Bicicleta no encontrada", "error"); showMainPage(); return; }
+        const bike = doc.data();
+        currentBike = { id: bikeId, ...bike };
+        document.getElementById('bikeDetailName').textContent = bike.name;
+        document.getElementById('bikeDetailHourlyPrice').textContent = `S/ ${bike.hourlyPrice}`;
+        document.getElementById('bikeDetailDailyPrice').textContent = `S/ ${bike.dailyPrice}`;
+        document.getElementById('bikeDetailLocation').textContent = bike.location;
+        document.getElementById('mapLocationName').textContent = bike.location;
+        document.getElementById('bikeMapIframe').src = `https://maps.google.com/maps?q=${encodeURIComponent((bike.location||'')+', Lima, Peru')}&output=embed&z=14`;
+        document.getElementById('bikeDetailDescription').textContent = bike.description || 'Sin descripción disponible.';
+        document.getElementById('bikeOwnerName').textContent = bike.ownerName;
+        document.getElementById('ownerAvatar').textContent = bike.ownerName ? bike.ownerName.charAt(0).toUpperCase() : 'U';
+        const accessoriesSection = document.getElementById('bikeAccessories');
+        const accessoriesList = document.getElementById('bikeAccessoriesList');
+        if (bike.accessories && bike.accessories.length > 0) {
+          accessoriesSection.style.display = 'block';
+          const icons = { 'Casco': '🪖', 'Candado': '🔒', 'Luces LED': '💡', 'Canasta': '🧺' };
+          accessoriesList.innerHTML = bike.accessories.map(a => `<span class="accessory-badge">${icons[a]||'✓'} ${a}</span>`).join('');
+        } else { accessoriesSection.style.display = 'none'; }
+        document.getElementById('mainBikePhoto').src = bike.photo;
+        const thumbs = document.getElementById('photoThumbnails');
+        thumbs.innerHTML = '';
+        thumbs.appendChild(createThumbnail(bike.photo, true));
+        if (bike.additionalPhotos) bike.additionalPhotos.forEach(url => thumbs.appendChild(createThumbnail(url, false)));
+      } catch (error) {
+        console.error('Error loading bike details:', error);
+        showMessage('Error al cargar los detalles de la bicicleta', 'error');
+        showMainPage();
+      }
+    }
+
+    function createThumbnail(photoUrl, isActive) {
+      const thumb = document.createElement('img');
+      thumb.src = photoUrl;
+      thumb.style.cssText = `width:76px;height:58px;object-fit:cover;border-radius:8px;cursor:pointer;border:${isActive?'2.5px solid var(--green-light)':'1.5px solid var(--border)'};transition:border-color 0.2s;`;
+      thumb.onclick = () => {
+        document.getElementById('mainBikePhoto').src = photoUrl;
+        document.querySelectorAll('#photoThumbnails img').forEach(img => img.style.border = '1.5px solid var(--border)');
+        thumb.style.border = '2.5px solid var(--green-light)';
+      };
+      return thumb;
+    }
+
+    function loadBikes() {
+      if (!db) return;
+      db.collection("bikes").orderBy("createdAt", "desc").onSnapshot(function(snapshot) {
+        const bikeList = document.getElementById("bikeList");
+        bikeList.innerHTML = "";
+        if (snapshot.empty) {
+          bikeList.innerHTML = `<div class="empty-state"><h3>🚲 ¡Sé el primero!</h3><p>Aún no hay bicicletas disponibles. <a href="#agregar" onclick="scrollToSection('agregar'); return false;">Comparte la tuya</a> y empieza la comunidad.</p></div>`;
+          return;
+        }
+        snapshot.forEach(function(doc) {
+          const bike = doc.data(); const bikeId = doc.id;
+          const canManage = currentUser && (currentUser.uid === bike.ownerId || isAdmin);
+          const adminControls = canManage ? `<div class="admin-controls"><button class="btn-edit" onclick="event.stopPropagation();editBike('${bikeId}','${bike.ownerId}')" title="Editar">✏️</button><button class="btn-delete" onclick="event.stopPropagation();deleteBike('${bikeId}','${bike.ownerId}')" title="Eliminar">🗑️</button></div>` : '';
+          const accessoriesHtml = bike.accessories && bike.accessories.length > 0 ? `<div class="bike-card-accessories">Incluye: ${bike.accessories.join(', ')}</div>` : '';
+          const adminEmailHtml = isAdmin ? `<div style="font-size:0.78rem;color:var(--text-muted);">📧 ${bike.ownerEmail}</div>` : '';
+          bikeList.innerHTML += `<div class="bike-card" onclick="showBikeDetail('${bikeId}')">${adminControls}<img src="${bike.photo}" alt="${bike.name}" onerror="this.src='https://via.placeholder.com/400x220?text=Sin+Imagen'"><div class="bike-card-body"><div class="badge-verified">✅ Verificado</div><div class="bike-card-title">${bike.name}</div><div class="bike-card-location">📍 ${bike.location}</div><div class="bike-card-price">S/ ${bike.hourlyPrice}<small style="font-size:0.7rem;font-weight:500;color:var(--text-muted);">/hora</small></div><div class="bike-card-price-day">S/ ${bike.dailyPrice} / día</div><div class="bike-card-owner">👤 ${bike.ownerName||'Usuario'}</div>${accessoriesHtml}${adminEmailHtml}<button class="btn btn-primary" style="width:100%;margin-top:0.75rem;padding:10px;" onclick="event.stopPropagation();showBikeDetail('${bikeId}')">Ver detalles</button></div></div>`;
+        });
+      });
+    }
+
+    window.deleteBike = function(bikeId, ownerId) {
+      if (!currentUser || !(currentUser.uid === ownerId || isAdmin)) { showMessage("No tienes permisos para eliminar esta bicicleta", "error"); return; }
+      if (confirm(isAdmin && currentUser.uid !== ownerId ? '¿Seguro de eliminar? (ADMIN)' : '¿Seguro de eliminar esta bicicleta?')) {
+        db.collection("bikes").doc(bikeId).delete().then(() => showMessage("Bicicleta eliminada correctamente")).catch(() => showMessage("Error al eliminar", "error"));
+      }
+    };
+
+    window.editBike = async function(bikeId, ownerId) {
+      if (!currentUser || !(currentUser.uid === ownerId || isAdmin)) { showMessage("No tienes permisos para editar esta bicicleta", "error"); return; }
+      try {
+        const doc = await db.collection("bikes").doc(bikeId).get();
+        if (!doc.exists) { showMessage("Bicicleta no encontrada", "error"); return; }
+        const bike = doc.data();
+        document.getElementById('editBikeId').value = bikeId;
+        document.getElementById('editBikeName').value = bike.name || '';
+        document.getElementById('editBikeLocation').value = bike.location || '';
+        document.getElementById('editBikeHourlyPrice').value = bike.hourlyPrice || '';
+        document.getElementById('editBikeDailyPrice').value = bike.dailyPrice || '';
+        document.getElementById('editBikeWhatsapp').value = bike.whatsapp || '';
+        document.getElementById('editBikeDescription').value = bike.description || '';
+        document.getElementById('editIncludesHelmet').checked = (bike.accessories||[]).includes('Casco');
+        document.getElementById('editIncludesLock').checked = (bike.accessories||[]).includes('Candado');
+        document.getElementById('editIncludesLights').checked = (bike.accessories||[]).includes('Luces LED');
+        document.getElementById('editIncludesBasket').checked = (bike.accessories||[]).includes('Canasta');
+        document.getElementById('editPhotoInput').value = '';
+        document.getElementById('editBikeModal').style.display = 'block';
+      } catch (error) { showMessage("Error al cargar los datos: " + error.message, "error"); }
+    };
+
+    document.getElementById('editBikeForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const bikeId = document.getElementById('editBikeId').value;
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true; submitBtn.textContent = 'Guardando...';
+      try {
+        const accessories = [];
+        if (document.getElementById('editIncludesHelmet').checked) accessories.push('Casco');
+        if (document.getElementById('editIncludesLock').checked) accessories.push('Candado');
+        if (document.getElementById('editIncludesLights').checked) accessories.push('Luces LED');
+        if (document.getElementById('editIncludesBasket').checked) accessories.push('Canasta');
+        const updates = {
+          name: document.getElementById('editBikeName').value,
+          location: document.getElementById('editBikeLocation').value,
+          hourlyPrice: document.getElementById('editBikeHourlyPrice').value,
+          dailyPrice: document.getElementById('editBikeDailyPrice').value,
+          whatsapp: document.getElementById('editBikeWhatsapp').value,
+          description: document.getElementById('editBikeDescription').value,
+          accessories,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        const newPhoto = document.getElementById('editPhotoInput').files[0];
+        if (newPhoto) { showMessage('Subiendo nueva foto...', 'info'); updates.photo = await uploadToCloudinary(newPhoto); }
+        await db.collection("bikes").doc(bikeId).update(updates);
+        closeModal('editBikeModal');
+        showMessage('Bicicleta actualizada correctamente ✅');
+        if (currentBike && currentBike.id === bikeId) loadBikeDetail(bikeId);
+        loadBikes();
+      } catch (error) { showMessage("Error al guardar: " + error.message, "error"); }
+      finally { submitBtn.disabled = false; submitBtn.textContent = 'Guardar cambios'; }
+    });
+
+    document.getElementById('addBikeForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!currentUser) { showMessage('Debes iniciar sesión', 'error'); testLogin(); return; }
+      const mainFile = document.getElementById("photoInput").files[0];
+      const additionalFiles = document.getElementById("additionalPhotos").files;
+      if (!mainFile) { showMessage('Debes subir al menos una foto', 'error'); return; }
+      if (additionalFiles.length > 4) { showMessage('Máximo 4 fotos adicionales', 'error'); return; }
+      try {
+        showMessage('Subiendo fotos...', 'info');
+        const mainPhotoURL = await uploadToCloudinary(mainFile);
+        const additionalPhotos = [];
+        for (let i = 0; i < additionalFiles.length; i++) additionalPhotos.push(await uploadToCloudinary(additionalFiles[i]));
+        const userDoc = await db.collection("users").doc(currentUser.uid).get();
+        const userName = userDoc.exists ? userDoc.data().name : 'Usuario';
+        const accessories = [];
+        if (document.getElementById("includesHelmet").checked) accessories.push("Casco");
+        if (document.getElementById("includesLock").checked) accessories.push("Candado");
+        if (document.getElementById("includesLights").checked) accessories.push("Luces LED");
+        if (document.getElementById("includesBasket").checked) accessories.push("Canasta");
+        await db.collection("bikes").add({
+          name: document.getElementById("bikeName").value,
+          location: document.getElementById("bikeLocation").value,
+          description: document.getElementById("bikeDescription").value,
+          whatsapp: document.getElementById("bikeWhatsapp").value,
+          hourlyPrice: document.getElementById("bikeHourlyPrice").value,
+          dailyPrice: document.getElementById("bikeDailyPrice").value,
+          photo: mainPhotoURL, additionalPhotos, accessories,
+          ownerId: currentUser.uid, ownerEmail: currentUser.email, ownerName: userName,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("addBikeForm").reset();
+        showMessage('Bicicleta publicada correctamente');
+        scrollToSection('bicicletas');
+      } catch (error) { showMessage(`Error al publicar: ${error.message}`, 'error'); }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      try {
+        await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+        closeModal('loginModal'); document.getElementById('loginForm').reset();
+      } catch (error) {
+        const msgs = { 'auth/user-not-found': 'No existe una cuenta con este email', 'auth/wrong-password': 'Contraseña incorrecta', 'auth/invalid-email': 'Email inválido', 'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde' };
+        showMessage(msgs[error.code] || error.message, 'error');
+      }
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const documentFile = document.getElementById('signupDocument').files[0];
+      if (!name) { showMessage('El nombre es obligatorio', 'error'); return; }
+      if (!documentFile) { showMessage('Debes subir tu DNI o pasaporte', 'error'); return; }
+      if (password !== confirmPassword) { showMessage('Las contraseñas no coinciden', 'error'); return; }
+      if (password.length < 6) { showMessage('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+      try {
+        showMessage('Creando cuenta y subiendo documento...', 'info');
+        const documentURL = await uploadToCloudinary(documentFile);
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        await db.collection("users").doc(userCredential.user.uid).set({ name, email, documentUrl: documentURL, verified: false, blocked: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('signupModal'); document.getElementById('signupForm').reset();
+        showMessage('Cuenta creada exitosamente. Tu documento será verificado pronto.');
+      } catch (error) {
+        const msgs = { 'auth/email-already-in-use': 'Ya existe una cuenta con este email', 'auth/invalid-email': 'Email inválido', 'auth/weak-password': 'La contraseña es muy débil' };
+        showMessage(msgs[error.code] || error.message, 'error');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      if (!auth) return;
+      auth.signOut().then(() => showMessage('Sesión cerrada correctamente')).catch(() => showMessage('Error al cerrar sesión', 'error'));
+    });
+
+    document.getElementById('bookingRequestForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (!currentBike) return;
+      const startDate = document.getElementById('bookingStartDate').value;
+      const endDate = document.getElementById('bookingEndDate').value;
+      const message = document.getElementById('bookingMessage').value;
+      if (!startDate || !endDate) { showMessage('Por favor selecciona las fechas de reserva', 'error'); return; }
+      if (new Date(startDate) >= new Date(endDate)) { showMessage('La fecha de fin debe ser posterior a la fecha de inicio', 'error'); return; }
+      const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000*60*60*24));
+      const total = days * parseInt(currentBike.dailyPrice);
+      const txt = `Hola! Me interesa alquilar tu bicicleta "${currentBike.name}" desde limabikeshare.com\n\n📅 Fechas: ${startDate} al ${endDate} (${days} día${days>1?'s':''})\n💰 Precio estimado: S/ ${total}\n📍 Ubicación: ${currentBike.location}\n\n${message?`Mensaje adicional: ${message}`:''}\n\n¿Está disponible para esas fechas?`;
+      window.open(`https://wa.me/${currentBike.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(txt)}`, '_blank');
+    });
+
+    ['bookingStartDate', 'bookingEndDate'].forEach(id => {
+      document.getElementById(id).addEventListener('change', function() {
+        const s = document.getElementById('bookingStartDate').value;
+        const e = document.getElementById('bookingEndDate').value;
+        if (s && e && currentBike && new Date(s) < new Date(e)) {
+          const days = Math.ceil((new Date(e)-new Date(s))/(1000*60*60*24));
+          document.getElementById('bookingTotal').textContent = `S/ ${days*parseInt(currentBike.dailyPrice)} (${days} día${days>1?'s':''})`;
+        } else { document.getElementById('bookingTotal').textContent = 'S/ 0'; }
+      });
+    });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupCloseHandlers);
+    else setupCloseHandlers();
+
+    loadBikes();
+    checkInitialRoute();
+  </script>
+
+  <!-- ══ HERO ANIMATION: Llama & Alpaca Tándem ══ -->
+  <script>
+  (function(){
+    const cv=document.getElementById('featCanvas');
+    if(!cv) return;
+    const ctx=cv.getContext('2d');
+    let t=0;
+    const GREEN='#15803d',DARK='#1f2937';
+    const LL='#f3e8d0',LD='#d4b896',LH='#92400e',LK='#b8936a';
+    const AL='#f5f5f5',AM='#e0e0e0',AHc='#bdbdbd',PINK='#f9a8d4';
+    const BBF={x:268,y:306},BBB={x:432,y:306},CRANK=30;
+    const LH1={x:255,y:270},LH2={x:288,y:270};
+    const AH1={x:420,y:272},AH2={x:453,y:272};
+    const THIGH=44,SHIN=40;
+    function ik(hip,foot,thigh,shin){
+      const dx=foot.x-hip.x,dy=foot.y-hip.y;
+      const d=Math.min(Math.sqrt(dx*dx+dy*dy),thigh+shin-2);
+      const a0=Math.atan2(dy,dx);
+      const cosA=(thigh*thigh+d*d-shin*shin)/(2*thigh*d);
+      const a=Math.acos(Math.max(-1,Math.min(1,cosA)));
+      return{x:hip.x+thigh*Math.cos(a0-a),y:hip.y+thigh*Math.sin(a0-a)};
+    }
+    function drawLeg(hip,foot,col,hoof){
+      const knee=ik(hip,foot,THIGH,SHIN);
+      ctx.lineCap='round';
+      ctx.lineWidth=12;ctx.strokeStyle=col;
+      ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(knee.x,knee.y);ctx.stroke();
+      ctx.lineWidth=11;
+      ctx.beginPath();ctx.moveTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);ctx.stroke();
+      ctx.save();ctx.translate(foot.x,foot.y);
+      ctx.fillStyle=hoof;ctx.beginPath();ctx.ellipse(0,0,10,5,0,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+    function pin(bb,a){return{x:bb.x+CRANK*Math.sin(a),y:bb.y+CRANK*Math.cos(a)};}
+    function drawPedal(p,a){
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a*0.3);
+      ctx.fillStyle=DARK;ctx.beginPath();ctx.roundRect(-13,-4,26,8,3);ctx.fill();
+      ctx.restore();
+    }
+    function drawCrank(bb,p){
+      ctx.lineWidth=5;ctx.strokeStyle='#374151';ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(bb.x,bb.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+    }
+    function drawWheel(cx,cy,r){
+      ctx.lineWidth=1.8;ctx.strokeStyle='#9ca3af';
+      for(let i=0;i<4;i++){
+        const a=t*3+i*Math.PI/4;
+        ctx.beginPath();ctx.moveTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
+        ctx.lineTo(cx-r*Math.cos(a),cy-r*Math.sin(a));ctx.stroke();
+      }
+      ctx.lineWidth=8;ctx.strokeStyle=DARK;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#374151';ctx.beginPath();ctx.arc(cx,cy,7,0,Math.PI*2);ctx.fill();
+    }
+    function drawCloud(x,y,r){
+      ctx.fillStyle='rgba(255,255,255,0.82)';
+      [[0,0,1],[-.3,.12,.48],[.3,.14,.42],[0,-.1,.58]].forEach(([ox,oy,s])=>{
+        ctx.beginPath();ctx.ellipse(x+r*ox,y+r*oy,r*s,r*s*0.42,0,0,Math.PI*2);ctx.fill();
+      });
+    }
+    let clouds=[{x:60,y:58},{x:320,y:74},{x:560,y:62}];
+    function drawFrame(b){
+      ctx.lineWidth=6;ctx.strokeStyle=GREEN;ctx.lineCap='round';
+      [[198,252+b,268,306+b],[318,244+b,268,306+b],[268,306+b,432,306+b],
+       [432,250+b,432,306+b],[432,306+b,472,330+b],[432,250+b,472,330+b],
+       [198,252+b,198,330+b]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+      });
+      ctx.lineWidth=5;
+      [[198,236+b,318,244+b],[318,244+b,432,250+b]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+      });
+      ctx.lineWidth=2;ctx.strokeStyle='#9ca3af';ctx.setLineDash([7,4]);
+      ctx.beginPath();ctx.moveTo(268,306+b);ctx.lineTo(432,306+b);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth=3;ctx.strokeStyle='#6b7280';
+      ctx.beginPath();ctx.arc(268,306+b,20,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(432,306+b,20,0,Math.PI*2);ctx.stroke();
+    }
+    function drawSaddles(b){
+      ctx.lineWidth=4;ctx.strokeStyle='#374151';
+      ctx.beginPath();ctx.moveTo(318,244+b);ctx.lineTo(318,218+b);ctx.stroke();
+      ctx.fillStyle=DARK;ctx.beginPath();ctx.roundRect(300,210+b,44,10,5);ctx.fill();
+      ctx.beginPath();ctx.moveTo(432,250+b);ctx.lineTo(432,224+b);ctx.stroke();
+      ctx.fillStyle=DARK;ctx.beginPath();ctx.roundRect(414,216+b,44,10,5);ctx.fill();
+    }
+    function drawHandlebars(b){
+      ctx.lineCap='round';
+      // FRONT handlebar (llama)
+      ctx.lineWidth=5;ctx.strokeStyle='#374151';
+      ctx.beginPath();ctx.moveTo(198,214+b);ctx.lineTo(198,252+b);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(176,208+b);ctx.lineTo(220,215+b);ctx.stroke();
+      ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(176,208+b);
+      ctx.quadraticCurveTo(170,210+b,168,218+b);
+      ctx.quadraticCurveTo(166,226+b,172,229+b);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(220,215+b);
+      ctx.quadraticCurveTo(226,217+b,227,225+b);
+      ctx.quadraticCurveTo(229,232+b,222,234+b);ctx.stroke();
+      ctx.fillStyle=DARK;
+      ctx.beginPath();ctx.ellipse(172,231+b,7,4,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(222,236+b,7,4,0,0,Math.PI*2);ctx.fill();
+      // REAR handlebar (alpaca) near rear seat x~448
+      ctx.lineWidth=5;ctx.strokeStyle='#374151';
+      ctx.beginPath();ctx.moveTo(448,224+b);ctx.lineTo(448,250+b);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(430,220+b);ctx.lineTo(466,220+b);ctx.stroke();
+      ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(430,220+b);
+      ctx.quadraticCurveTo(424,220+b,422,228+b);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(466,220+b);
+      ctx.quadraticCurveTo(472,220+b,474,228+b);ctx.stroke();
+      ctx.fillStyle=DARK;
+      ctx.beginPath();ctx.ellipse(422,230+b,7,4,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(474,230+b,7,4,0,0,Math.PI*2);ctx.fill();
+    }
+    function drawFlag(b){
+      const sk=Math.sin(t*5)*0.12;
+      ctx.lineWidth=2.5;ctx.strokeStyle='#374151';
+      ctx.beginPath();ctx.moveTo(196,172+b);ctx.lineTo(196,214+b);ctx.stroke();
+      ctx.save();ctx.translate(196,179+b);ctx.transform(1,0,sk,1,0,0);
+      ctx.fillStyle='#22c55e';
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-30,7);ctx.lineTo(0,14);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+    function drawLlamaBody(b){
+      ctx.fillStyle=LL;ctx.beginPath();ctx.ellipse(312,258+b,58,34,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='white';ctx.globalAlpha=0.5;
+      ctx.beginPath();ctx.ellipse(278,253+b,20,16,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    function drawLlamaNeck(b){
+      ctx.save();ctx.translate(292,222+b);ctx.rotate(-13*Math.PI/180);
+      ctx.fillStyle=LL;
+      ctx.beginPath();ctx.moveTo(-12,0);ctx.quadraticCurveTo(-14,-38,-9,-76);
+      ctx.lineTo(9,-76);ctx.quadraticCurveTo(14,-38,12,0);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+    function drawLlamaEars(b){
+      [{cx:264,cy:118,rot:6},{cx:256,cy:114,rot:2}].forEach(({cx,cy,rot})=>{
+        ctx.save();ctx.translate(cx,cy+b);ctx.rotate(rot*Math.PI/180);
+        ctx.fillStyle=LL;ctx.beginPath();ctx.ellipse(0,0,6,24,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=PINK;ctx.globalAlpha=0.8;
+        ctx.beginPath();ctx.ellipse(0,1,3,17,0,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;ctx.restore();
+      });
+    }
+    function drawLlamaHead(b){
+      ctx.fillStyle=LL;ctx.beginPath();ctx.ellipse(248,150+b,27,21,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#e8d5b0';ctx.beginPath();ctx.roundRect(186,146+b,46,18,9);ctx.fill();
+      ctx.fillStyle='#dbc898';ctx.beginPath();ctx.ellipse(200,159+b,14,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=LK;ctx.beginPath();ctx.arc(194,158+b,3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(204,158+b,3,0,Math.PI*2);ctx.fill();
+      ctx.lineWidth=2;ctx.strokeStyle=LK;
+      ctx.beginPath();ctx.moveTo(199,163+b);ctx.lineTo(199,170+b);ctx.stroke();
+      ctx.strokeStyle=LH;ctx.beginPath();ctx.moveTo(191,162+b);ctx.quadraticCurveTo(199,169+b,207,162+b);ctx.stroke();
+      ctx.fillStyle=DARK;ctx.beginPath();ctx.arc(237,144+b,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='white';ctx.beginPath();ctx.arc(240,141+b,3,0,Math.PI*2);ctx.fill();
+      ctx.lineWidth=1.5;ctx.strokeStyle=DARK;
+      [[230,138,227,133],[237,136,236,131],[244,137,245,132]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath();ctx.moveTo(x1,y1+b);ctx.lineTo(x2,y2+b);ctx.stroke();
+      });
+    }
+    function drawSombrero(b){
+      ctx.fillStyle='#92400e';ctx.beginPath();ctx.ellipse(252,112+b,33,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#b45309';ctx.beginPath();ctx.roundRect(226,82+b,52,32,7);ctx.fill();
+      ctx.fillStyle='#92400e';ctx.beginPath();ctx.ellipse(252,82+b,26,6,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#dc2626';ctx.beginPath();ctx.roundRect(225,106+b,54,8,2);ctx.fill();
+      ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.rect(225,106+b,18,8);ctx.fill();
+      ctx.fillStyle='#16a34a';ctx.beginPath();ctx.rect(243,106+b,18,8);ctx.fill();
+    }
+    function drawLlamaArms(b){
+      ctx.lineWidth=9;ctx.strokeStyle=LD;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(278,258+b);ctx.quadraticCurveTo(230,265+b,170,230+b);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(278,258+b);ctx.quadraticCurveTo(234,265+b,220,234+b);ctx.stroke();
+    }
+    function drawAlpacaBody(b){
+      [[450,254,60,38,AL,1],[450,243,56,28,'white',0.65],
+       [426,250,28,22,'white',0.5],[472,249,24,20,'white',0.48],
+       [430,222,20,13,'white',0.75],[454,218,22,14,'white',0.75],[474,225,17,12,'white',0.68]
+      ].forEach(([cx,cy,rx,ry,c,a])=>{
+        ctx.fillStyle=c;ctx.globalAlpha=a;
+        ctx.beginPath();ctx.ellipse(cx,cy+b,rx,ry,0,0,Math.PI*2);ctx.fill();
+      });
+      ctx.globalAlpha=1;
+    }
+    function drawAlpacaNeck(b){
+      ctx.save();ctx.translate(436,224+b);ctx.rotate(-8*Math.PI/180);
+      ctx.fillStyle=AM;
+      ctx.beginPath();ctx.moveTo(-12,0);ctx.quadraticCurveTo(-13,-26,-9,-54);
+      ctx.lineTo(9,-54);ctx.quadraticCurveTo(13,-26,12,0);ctx.closePath();ctx.fill();
+      ctx.fillStyle='white';ctx.globalAlpha=0.6;
+      ctx.beginPath();ctx.ellipse(-1,-18,10,20,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(1,-36,8,14,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;ctx.restore();
+    }
+    function drawAlpacaEars(b){
+      [{cx:458,cy:138,rot:12},{cx:450,cy:134,rot:7}].forEach(({cx,cy,rot})=>{
+        ctx.save();ctx.translate(cx,cy+b);ctx.rotate(rot*Math.PI/180);
+        ctx.fillStyle=AM;ctx.beginPath();ctx.ellipse(0,0,8,12,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='white';ctx.globalAlpha=0.75;
+        ctx.beginPath();ctx.ellipse(0,1,5,8,0,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=0.7;ctx.fillStyle=PINK;
+        ctx.beginPath();ctx.ellipse(0,1,3,5,0,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;ctx.restore();
+      });
+    }
+    function drawAlpacaHead(b){
+      ctx.fillStyle=AL;ctx.beginPath();ctx.ellipse(436,162+b,24,19,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='white';ctx.globalAlpha=0.9;
+      ctx.beginPath();ctx.ellipse(438,150+b,22,14,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(430,154+b,14,10,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle=AM;ctx.beginPath();ctx.ellipse(412,168+b,14,9,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ccc';ctx.beginPath();ctx.ellipse(410,173+b,10,6,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#aaa';
+      ctx.beginPath();ctx.arc(405,173+b,2.5,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(414,173+b,2.5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#888';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(404,177+b);ctx.quadraticCurveTo(410,182+b,416,177+b);ctx.stroke();
+      ctx.fillStyle=DARK;ctx.beginPath();ctx.arc(424,156+b,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='white';ctx.beginPath();ctx.arc(427,153+b,3,0,Math.PI*2);ctx.fill();
+      ctx.lineWidth=1.5;ctx.strokeStyle=DARK;
+      [[417,150,414,145],[424,148,423,143],[431,149,432,144]].forEach(([x1,y1,x2,y2])=>{
+        ctx.beginPath();ctx.moveTo(x1,y1+b);ctx.lineTo(x2,y2+b);ctx.stroke();
+      });
+    }
+    function drawAlpacaArms(b){
+      ctx.lineWidth=9;ctx.strokeStyle=AM;ctx.lineCap='round';
+      // left arm reaches left grip at (422, 230)
+      ctx.beginPath();ctx.moveTo(426,256+b);ctx.quadraticCurveTo(424,242+b,422,230+b);ctx.stroke();
+      // right arm reaches right grip at (474, 230)
+      ctx.beginPath();ctx.moveTo(440,252+b);ctx.quadraticCurveTo(458,240+b,474,230+b);ctx.stroke();
+    }
+    function drawFlower(b){
+      const fx=474,fy=220+b;
+      ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(fx,fy,6,0,Math.PI*2);ctx.fill();
+      [[fx-8,fy-5],[fx+8,fy-5],[fx-6,fy+6],[fx+6,fy+6]].forEach(([px,py])=>{
+        ctx.fillStyle=PINK;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+      });
+    }
+    function drawTail(b){
+      ctx.save();ctx.translate(508,252+b);ctx.rotate(Math.sin(t*4)*0.24);
+      ctx.fillStyle='white';ctx.beginPath();ctx.ellipse(0,0,10,16,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=AM;ctx.beginPath();ctx.ellipse(0,0,7,11,0,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+    function frame(){
+      ctx.clearRect(0,0,680,400);
+      const gr=ctx.createLinearGradient(0,0,0,400);
+      gr.addColorStop(0,'#bfecdd');gr.addColorStop(1,'#f0fdf4');
+      ctx.fillStyle=gr;ctx.fillRect(0,0,680,400);
+      ctx.fillStyle='#fde68a';ctx.beginPath();ctx.arc(60,58,30,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(60,58,22,0,Math.PI*2);ctx.fill();
+      clouds.forEach(cl=>{cl.x=(cl.x+0.6)%780-100;drawCloud(cl.x,cl.y,48);});
+      ctx.fillStyle='#86efac';ctx.globalAlpha=0.4;
+      ctx.beginPath();ctx.ellipse(120,320,190,55,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(590,324,155,48,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#6b7280';ctx.fillRect(0,316,680,84);
+      ctx.fillStyle='#4ade80';ctx.globalAlpha=0.3;ctx.fillRect(0,316,680,10);ctx.globalAlpha=1;
+      for(let x=0;x<680;x+=95){
+        ctx.fillStyle='rgba(255,255,255,0.35)';
+        ctx.beginPath();ctx.roundRect(x,356,65,5,3);ctx.fill();
+      }
+      const da=(Math.sin(t*4)+1)/2;
+      ctx.globalAlpha=da*0.65;ctx.fillStyle='#d1d5db';
+      ctx.beginPath();ctx.arc(526,300,11,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=(1-da)*0.45;
+      ctx.beginPath();ctx.arc(520,305,8,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+
+      // shift everything up by 26px to fit 400px tall canvas
+      ctx.save(); ctx.translate(0,-26);
+
+      const bob=Math.sin(t*7)*2.5;
+      const ang=t*2.8;
+      const pF1=pin({x:BBF.x,y:BBF.y+bob},ang);
+      const pF2=pin({x:BBF.x,y:BBF.y+bob},ang+Math.PI);
+      const pB1=pin({x:BBB.x,y:BBB.y+bob},ang);
+      const pB2=pin({x:BBB.x,y:BBB.y+bob},ang+Math.PI);
+      drawCrank({x:BBF.x,y:BBF.y+bob},pF1);drawCrank({x:BBF.x,y:BBF.y+bob},pF2);
+      drawCrank({x:BBB.x,y:BBB.y+bob},pB1);drawCrank({x:BBB.x,y:BBB.y+bob},pB2);
+      drawFrame(bob);drawSaddles(bob);drawHandlebars(bob);drawFlag(bob);
+      drawWheel(198,330,46);drawWheel(472,330,46);
+      drawPedal(pF1,ang);drawPedal(pF2,ang+Math.PI);
+      drawPedal(pB1,ang);drawPedal(pB2,ang+Math.PI);
+      drawLeg({x:LH1.x,y:LH1.y+bob},pF1,LD,LH);
+      drawLeg({x:LH2.x,y:LH2.y+bob},pF2,LD,LH);
+      drawLeg({x:AH1.x,y:AH1.y+bob},pB1,AM,AHc);
+      drawLeg({x:AH2.x,y:AH2.y+bob},pB2,AM,AHc);
+      drawLlamaBody(bob);drawLlamaNeck(bob);drawLlamaEars(bob);
+      drawLlamaHead(bob);drawSombrero(bob);drawLlamaArms(bob);
+      drawAlpacaBody(bob);drawAlpacaNeck(bob);drawAlpacaEars(bob);
+      drawAlpacaHead(bob);drawAlpacaArms(bob);drawFlower(bob);drawTail(bob);
+
+      ctx.restore();
+      t+=0.038;
+      requestAnimationFrame(frame);
+    }
+    frame();
+  })();
+  </script>
 </body>
 </html>
