@@ -1,4 +1,4 @@
-const CACHE = 'ritmo-lima-v1';
+const CACHE = 'ritmo-lima-v2';
 const ASSETS = ['/ritmo-lima/', '/ritmo-lima/index.html'];
 
 self.addEventListener('install', e => {
